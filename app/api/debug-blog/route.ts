@@ -48,5 +48,29 @@ export async function GET() {
     result.first_post_error = e instanceof Error ? e.message : String(e)
   }
 
+  // Exact query used by the /blog page
+  try {
+    const posts = await prisma.blogPost.findMany({
+      where: { published: true },
+      orderBy: { publishedAt: 'desc' },
+      take: 3,
+      select: {
+        slug: true,
+        title: true,
+        excerpt: true,
+        readTime: true,
+        contentType: true,
+        publishedAt: true,
+        category: { select: { slug: true, name: true } },
+        author: { select: { name: true } },
+        tags: { select: { tag: { select: { name: true } } }, take: 3 },
+      },
+    })
+    result.findMany_posts = posts.length
+    result.findMany_first = posts[0] ?? null
+  } catch (e) {
+    result.findMany_error = e instanceof Error ? e.message : String(e)
+  }
+
   return NextResponse.json(result, { status: 200 })
 }
