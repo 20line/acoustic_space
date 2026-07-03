@@ -6,9 +6,6 @@ export const NAV_ITEMS: NavItem[] = [
     labelEn: 'Solutions',
     href: '/catalog',
     children: [
-      { label: 'Реечные панели', labelEn: 'Slatted Panels', href: '/catalog/slatted' },
-      { label: 'Тканевые панели', labelEn: 'Fabric Panels', href: '/catalog/fabric' },
-      { label: 'Художественные панели', labelEn: 'Artistic', href: '/catalog/artistic' },
       { label: 'Басовые ловушки', labelEn: 'Bass Traps', href: '/catalog/bass-traps' },
       { label: 'Диффузоры', labelEn: 'Diffusers', href: '/catalog/diffusers' },
       { label: 'Мобильные решения', labelEn: 'Mobile', href: '/catalog/mobile' },
@@ -36,9 +33,6 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const FOOTER_LINKS = {
   solutions: [
-    { label: 'Реечные панели', href: '/catalog/slatted' },
-    { label: 'Тканевые панели', href: '/catalog/fabric' },
-    { label: 'Художественные панели', href: '/catalog/artistic' },
     { label: 'Басовые ловушки', href: '/catalog/bass-traps' },
     { label: 'Диффузоры', href: '/catalog/diffusers' },
     { label: 'Мобильные решения', href: '/catalog/mobile' },
@@ -108,9 +102,6 @@ export const ROOM_TYPES = [
 ]
 
 export const PANEL_TYPES = [
-  { value: 'slatted', label: 'Реечные панели', pricePerSqm: 9800 },
-  { value: 'fabric', label: 'Тканевые панели', pricePerSqm: 7400 },
-  { value: 'artistic', label: 'Художественные панели', pricePerSqm: 14200 },
   { value: 'bass-traps', label: 'Басовые ловушки', pricePerSqm: 12600 },
   { value: 'diffusers', label: 'Диффузоры', pricePerSqm: 11400 },
   { value: 'mixed', label: 'Комплексная обработка', pricePerSqm: 10200 },

@@ -1,1 +1,1 @@
-{"version":"0.0.1","configurations":[{"name":"akusto-dev","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"port":3000}]}
+{"version":"0.0.1","configurations":[{"name":"akusto-dev","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"cwd":"C:\\Users\\t9163\\OneDrive\\Desktop\\site_panels\\akusto","port":3000}]}

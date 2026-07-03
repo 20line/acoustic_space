@@ -72,7 +72,7 @@ export function HeroSection() {
       </motion.div>
 
       {/* Content */}
-      <div className="relative z-10 w-full pb-[200px] pt-[120px] md:pb-[180px] md:pt-[140px]">
+      <div className="relative z-10 w-full pb-[200px] pt-[148px] md:pb-[180px] md:pt-[165px]">
         <div className="wrap">
           <motion.div
             className="max-w-[660px] text-white pl-0 md:pl-[6%]"
