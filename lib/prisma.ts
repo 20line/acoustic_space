@@ -1,8 +1,15 @@
-import { neon, neonConfig } from '@neondatabase/serverless'
+import { neon, neonConfig, types } from '@neondatabase/serverless'
 import { PrismaNeonHTTP } from '@prisma/adapter-neon'
 import { PrismaClient } from '@prisma/client'
 
 neonConfig.fetchConnectionCache = true
+
+// Force timestamptz/timestamp columns to return ISO strings instead of Date objects.
+// Without this, PrismaNeonHTTP receives {} for DateTime fields and throws a
+// "Conversion failed: expected a string, found {}" error on complex queries.
+types.setTypeParser(1114, (val: string) => val) // timestamp
+types.setTypeParser(1184, (val: string) => val) // timestamptz
+types.setTypeParser(1082, (val: string) => val) // date
 
 // Lazy singleton — neon() must not be called at module evaluation time
 // because env vars are absent during Next.js build-time static analysis.
