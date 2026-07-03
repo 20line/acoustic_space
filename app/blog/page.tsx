@@ -83,7 +83,8 @@ async function getPosts(page: number, query: string) {
       dbRetry(() => prisma.blogPost.count({ where })),
     ])
     return { posts, total }
-  } catch {
+  } catch (err) {
+    console.error('[blog] getPosts error:', err)
     return { posts: [], total: 0 }
   }
 }
@@ -100,7 +101,8 @@ async function getCategories() {
         },
       })
     )
-  } catch {
+  } catch (err) {
+    console.error('[blog] getCategories error:', err)
     return []
   }
 }
