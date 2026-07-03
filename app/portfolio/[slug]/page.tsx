@@ -1,0 +1,190 @@
+import { Metadata } from 'next'
+import Link from 'next/link'
+import Image from 'next/image'
+import { notFound } from 'next/navigation'
+import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
+import { BackToTop } from '@/components/ui/BackToTop'
+import { FloatingContact } from '@/components/ui/FloatingContact'
+import { ProgressBar } from '@/components/ui/ProgressBar'
+import { RevealWrapper } from '@/components/ui/RevealWrapper'
+import { CtaBandSection } from '@/components/sections/CtaBandSection'
+import { getProjectBySlug, portfolioProjects } from '@/data/portfolio'
+import { buildMetadata } from '@/lib/metadata'
+import { SITE_URL, SITE_NAME } from '@/lib/utils'
+
+interface Props {
+  params: Promise<{ slug: string }>
+}
+
+export async function generateStaticParams() {
+  return portfolioProjects.map((p) => ({ slug: p.slug }))
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params
+  const project = getProjectBySlug(slug)
+  if (!project) return {}
+  return buildMetadata({
+    title: project.title,
+    description: project.description.slice(0, 160),
+    path: `/portfolio/${slug}`,
+  })
+}
+
+export default async function ProjectPage({ params }: Props) {
+  const { slug } = await params
+  const project = getProjectBySlug(slug)
+  if (!project) notFound()
+
+  const projectSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: project.title,
+    description: project.description,
+    url: `${SITE_URL}/portfolio/${slug}`,
+    image: project.images?.[0] ?? project.thumbnail,
+    creator: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    locationCreated: {
+      '@type': 'Place',
+      name: project.location,
+      addressCountry: 'RU',
+    },
+  }
+
+  const categoryLabels: Record<string, string> = {
+    studio: 'Студия', 'home-theater': 'Кинотеатр', hifi: 'Hi-Fi', office: 'Офис', restaurant: 'Ресторан', rehearsal: 'Репетиционная',
+  }
+
+  return (
+    <>
+      <ProgressBar />
+      <Header />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(projectSchema) }}
+      />
+      <main className="pt-24">
+        <div className="wrap py-4">
+          <nav className="flex gap-2 text-[13px]" style={{ color: 'var(--muted)' }}>
+            <Link href="/" className="hover:text-accent">Главная</Link>
+            <span>/</span>
+            <Link href="/portfolio" className="hover:text-accent">Портфолио</Link>
+            <span>/</span>
+            <span style={{ color: 'var(--ink)' }}>{project.title}</span>
+          </nav>
+        </div>
+
+        {/* Hero */}
+        <section className="pad pt-8">
+          <div className="wrap">
+            <RevealWrapper className="max-w-[760px] mb-12">
+              <span className="eyebrow block mb-4">
+                {categoryLabels[project.category]} · {project.location} · {project.year}
+              </span>
+              <h1 className="text-[clamp(32px,4.5vw,58px)] font-semibold leading-tight" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                {project.title}
+              </h1>
+              <p className="mt-4 text-[17px]" style={{ color: 'var(--muted)' }}>{project.description}</p>
+            </RevealWrapper>
+
+            {/* Images grid */}
+            <RevealWrapper>
+              <div className={`grid gap-3 ${project.images.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                {project.images.slice(0, 4).map((img, i) => (
+                  <div
+                    key={i}
+                    className={`relative overflow-hidden rounded-xl shadow-premium ${i === 0 ? 'sm:col-span-2 aspect-[16/9]' : 'aspect-[4/3]'}`}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${project.title} — фото ${i + 1}`}
+                      fill
+                      className="object-cover"
+                      priority={i === 0}
+                      placeholder="blur"
+                      blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI1IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM3YTVhM2MiLz48L3N2Zz4="
+                      sizes="(max-width:640px) 100vw, 50vw"
+                    />
+                    <div className="absolute inset-0 -z-10 seg-bg-2" aria-hidden />
+                  </div>
+                ))}
+              </div>
+            </RevealWrapper>
+          </div>
+        </section>
+
+        {/* Details */}
+        <section className="pad border-t" style={{ background: 'var(--cream-2)', borderColor: 'var(--line)' }}>
+          <div className="wrap">
+            <div className="grid grid-cols-1 gap-14 lg:grid-cols-3">
+              {/* Project info */}
+              <div className="lg:col-span-2">
+                <RevealWrapper>
+                  <h2 className="text-[clamp(26px,3vw,38px)] font-semibold mb-6" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                    Задача и решение
+                  </h2>
+                  <div className="flex flex-col gap-6">
+                    <div className="rounded-xl p-6" style={{ background: 'var(--cream)' }}>
+                      <h3 className="text-[14px] font-semibold tracking-[0.08em] uppercase mb-3" style={{ color: 'var(--accent)' }}>Задача</h3>
+                      <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink)' }}>{project.challenge}</p>
+                    </div>
+                    <div className="rounded-xl p-6" style={{ background: 'var(--cream)' }}>
+                      <h3 className="text-[14px] font-semibold tracking-[0.08em] uppercase mb-3" style={{ color: 'var(--accent)' }}>Решение</h3>
+                      <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink)' }}>{project.solution}</p>
+                    </div>
+                    <div className="rounded-xl p-6" style={{ background: 'var(--cream)' }}>
+                      <h3 className="text-[14px] font-semibold tracking-[0.08em] uppercase mb-3" style={{ color: 'var(--accent)' }}>Результат</h3>
+                      <p className="text-[15px] leading-relaxed" style={{ color: 'var(--ink)' }}>{project.result}</p>
+                    </div>
+                  </div>
+                </RevealWrapper>
+              </div>
+
+              {/* Sidebar */}
+              <RevealWrapper delay={100}>
+                <div className="rounded-xl p-6" style={{ background: 'var(--cream)', border: '1px solid var(--line)' }}>
+                  <h3 className="text-[14px] font-semibold tracking-[0.08em] uppercase mb-5" style={{ color: 'var(--muted)' }}>
+                    Параметры объекта
+                  </h3>
+                  <div className="flex flex-col gap-3">
+                    <InfoRow label="Площадь" value={`${project.area} м²`} />
+                    <InfoRow label="Тип" value={categoryLabels[project.category]} />
+                    <InfoRow label="Город" value={project.location} />
+                    <InfoRow label="Год" value={String(project.year)} />
+                  </div>
+                  <div className="mt-6">
+                    <h4 className="text-[12px] tracking-[0.1em] uppercase mb-3" style={{ color: 'var(--muted)' }}>Панели</h4>
+                    <div className="flex flex-col gap-1.5">
+                      {project.panelsUsed.map((p) => (
+                        <span key={p} className="text-[13px]" style={{ color: 'var(--ink)' }}>· {p}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </RevealWrapper>
+            </div>
+          </div>
+        </section>
+
+        <CtaBandSection />
+      </main>
+      <Footer />
+      <BackToTop />
+      <FloatingContact />
+    </>
+  )
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between py-2 border-b text-[14px]" style={{ borderColor: 'var(--line)' }}>
+      <span style={{ color: 'var(--muted)' }}>{label}</span>
+      <span className="font-semibold" style={{ color: 'var(--ink)' }}>{value}</span>
+    </div>
+  )
+}

@@ -1,0 +1,371 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String?  @unique
+  phone        String?  @unique
+  name         String?
+  passwordHash String?
+  role         UserRole @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cart          Cart?
+  orders        Order[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+
+  @@map("users")
+}
+
+model SmsCode {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  attempts  Int      @default(0)
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@map("sms_codes")
+}
+
+enum UserRole {
+  CUSTOMER
+  DESIGNER
+  ARCHITECT
+  DEALER
+  ADMIN
+}
+
+// ─── Cart ─────────────────────────────────────────────────────────────────────
+
+model Cart {
+  id        String     @id @default(cuid())
+  // null = guest cart (identified by cookie)
+  userId    String?    @unique
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  cart      Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productId   String
+  productName String
+  // price in kopecks at time of adding
+  unitPrice   Int
+  quantity    Int  @default(1)
+  // JSON config from configurator (material, size, color, etc.)
+  config      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id     String @id @default(cuid())
+  // human-readable: AS-2024-001
+  number String @unique
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // contact snapshot (works for guests too)
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
+  status        OrderStatus   @default(NEW)
+  paymentStatus PaymentStatus @default(PENDING)
+
+  items OrderItem[]
+
+  // all amounts in kopecks
+  subtotal    Int
+  discount    Int @default(0)
+  deliveryFee Int @default(0)
+  total       Int
+
+  promoCode     String?
+  promoDiscount Int @default(0)
+
+  deliveryType    DeliveryType @default(PICKUP)
+  deliveryAddress String?
+
+  comment String?
+
+  paymentMethod PaymentMethod @default(CARD)
+
+  // YooKassa / payment gateway reference
+  paymentId String?
+
+  // Юрлицо — для генерации счёта
+  legalName    String?
+  legalInn     String?
+  legalKpp     String?
+  legalAddress String?
+
+  // Номер счёта для юрлиц: СЧ-2024-001
+  invoiceNumber String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId   String
+  productName String
+  quantity    Int
+  unitPrice   Int
+  config      Json?
+
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  NEW
+  DESIGN
+  APPROVAL
+  PRODUCTION
+  PAINTING
+  PACKING
+  SHIPPING
+  INSTALLATION
+  DONE
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum PaymentMethod {
+  CARD
+  SBP
+  INVOICE
+}
+
+enum DeliveryType {
+  PICKUP
+  COURIER
+  TRANSPORT
+}
+
+// ─── Promo codes ──────────────────────────────────────────────────────────────
+
+model PromoCode {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  // discount in percent (0–100)
+  percent     Int
+  // max uses, null = unlimited
+  maxUses     Int?
+  usedCount   Int      @default(0)
+  active      Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("promo_codes")
+}
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  rating    Int      // 1–5
+  text      String
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@map("reviews")
+}
+
+// ─── Wishlist ─────────────────────────────────────────────────────────────────
+
+model WishlistItem {
+  id        String @id @default(cuid())
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+// ─── Blog ─────────────────────────────────────────────────────────────────────
+
+model BlogPost {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  title       String
+  description String
+  content     String  @db.Text
+  excerpt     String?
+
+  // SEO
+  ogImage     String?
+  readTime    Int?
+
+  // Cluster / content type
+  contentType BlogContentType @default(ARTICLE)
+
+  // Status
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+
+  // Schema.org extras
+  faqItems    BlogFaq[]
+  howToSteps  BlogHowToStep[]
+
+  // Relations
+  categoryId  String?
+  category    BlogCategory? @relation(fields: [categoryId], references: [id])
+
+  tags        BlogPostTag[]
+
+  authorId    String?
+  author      BlogAuthor? @relation(fields: [authorId], references: [id])
+
+  // Related posts (manual)
+  relatedSlugs String[] @default([])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([categoryId])
+  @@index([published, publishedAt])
+  @@map("blog_posts")
+}
+
+model BlogCategory {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  ogImage     String?
+  sortOrder   Int       @default(0)
+
+  posts       BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  posts BlogPostTag[]
+
+  @@map("blog_tags")
+}
+
+model BlogPostTag {
+  postId String
+  tagId  String
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("blog_post_tags")
+}
+
+model BlogAuthor {
+  id     String  @id @default(cuid())
+  slug   String  @unique
+  name   String
+  role   String?
+  bio    String?
+  avatar String?
+
+  posts  BlogPost[]
+
+  @@map("blog_authors")
+}
+
+model BlogFaq {
+  id       String   @id @default(cuid())
+  postId   String
+  post     BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  question String
+  answer   String
+  order    Int      @default(0)
+
+  @@map("blog_faqs")
+}
+
+model BlogHowToStep {
+  id          String   @id @default(cuid())
+  postId      String
+  post        BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  name        String
+  text        String
+  imageUrl    String?
+  order       Int      @default(0)
+
+  @@map("blog_how_to_steps")
+}
+
+model BlogLeadForm {
+  id          String   @id @default(cuid())
+  name        String
+  phone       String
+  email       String?
+  message     String?
+  sourceUrl   String?  // which article they came from
+  sourceSlug  String?
+  createdAt   DateTime @default(now())
+
+  @@map("blog_lead_forms")
+}
+
+enum BlogContentType {
+  ARTICLE
+  GUIDE
+  CASE_STUDY
+  COMPARISON
+  CHECKLIST
+  FAQ
+  GLOSSARY
+}
+
