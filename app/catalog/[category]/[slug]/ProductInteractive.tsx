@@ -40,6 +40,7 @@ export default function ProductInteractive({ product, cat, related }: Props) {
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const [wishlisted, setWishlisted] = useState(false)
+  const [colorsExpanded, setColorsExpanded] = useState(false)
   const [reviewText, setReviewText] = useState('')
   const [reviewName, setReviewName] = useState('')
   const [reviewRating, setReviewRating] = useState(5)
@@ -185,11 +186,25 @@ export default function ProductInteractive({ product, cat, related }: Props) {
                 {/* Colors */}
                 {product.colors.length > 0 && (
                   <div className="mb-6">
-                    <p className="text-[13px] font-semibold mb-2 tracking-[0.06em] uppercase" style={{ color: 'var(--muted)' }}>
-                      Доступные цвета
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[13px] font-semibold tracking-[0.06em] uppercase" style={{ color: 'var(--muted)' }}>
+                        Доступные цвета
+                        <span className="ml-1.5 normal-case tracking-normal font-normal text-[12px]">
+                          ({product.colors.length})
+                        </span>
+                      </p>
+                      {product.colors.length > 10 && (
+                        <button
+                          onClick={() => setColorsExpanded((v) => !v)}
+                          className="text-[12px] font-medium underline underline-offset-2"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          {colorsExpanded ? 'Свернуть' : 'Все цвета'}
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {product.colors.map((color) => (
+                      {(colorsExpanded ? product.colors : product.colors.slice(0, 10)).map((color) => (
                         <span
                           key={color.name}
                           className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px]"
@@ -203,6 +218,15 @@ export default function ProductInteractive({ product, cat, related }: Props) {
                           {color.name}
                         </span>
                       ))}
+                      {!colorsExpanded && product.colors.length > 10 && (
+                        <button
+                          onClick={() => setColorsExpanded(true)}
+                          className="inline-flex items-center rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-[var(--sand)]"
+                          style={{ borderColor: 'var(--line)', color: 'var(--accent)', borderStyle: 'dashed' }}
+                        >
+                          +{product.colors.length - 10} ещё
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

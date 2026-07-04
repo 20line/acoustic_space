@@ -1,4 +1,61 @@
-import type { Product } from '@/types'
+import type { Product, ProductColor } from '@/types'
+
+export const FABRIC_COLORS: ProductColor[] = [
+  // Белые / кремовые
+  { name: 'Белый',             hex: '#F8F6F2' },
+  { name: 'Слоновая кость',    hex: '#F5F0E8' },
+  { name: 'Кремовый',          hex: '#EDE8DC' },
+  { name: 'Жемчужный',         hex: '#E8E4DC' },
+  { name: 'Льняной',           hex: '#D4C9B4' },
+  // Бежевые / тауп
+  { name: 'Бежевый',           hex: '#D4C4A8' },
+  { name: 'Песочный',          hex: '#C8B89A' },
+  { name: 'Тауп',              hex: '#B0A090' },
+  { name: 'Мокко',             hex: '#9A8878' },
+  { name: 'Пепельно-бежевый',  hex: '#BEB4AA' },
+  // Серые
+  { name: 'Светло-серый',      hex: '#D8D4D0' },
+  { name: 'Серый',             hex: '#B8B4B0' },
+  { name: 'Средне-серый',      hex: '#909090' },
+  { name: 'Дымчатый',          hex: '#A0A8B0' },
+  { name: 'Тёмно-серый',       hex: '#686868' },
+  { name: 'Графит',            hex: '#4A4A4A' },
+  { name: 'Антрацит',          hex: '#2C2C2C' },
+  { name: 'Чёрный',            hex: '#1A1A1A' },
+  // Синие
+  { name: 'Небесно-голубой',   hex: '#A8C4D8' },
+  { name: 'Стальной синий',    hex: '#7A9FB8' },
+  { name: 'Грифельно-синий',   hex: '#5A7A90' },
+  { name: 'Морской',           hex: '#4A6A80' },
+  { name: 'Синий',             hex: '#3A5470' },
+  { name: 'Тёмно-синий',       hex: '#1A3050' },
+  { name: 'Индиго',            hex: '#3C3C70' },
+  // Зелёные
+  { name: 'Мятный',            hex: '#A8C8A8' },
+  { name: 'Шалфей',            hex: '#88A888' },
+  { name: 'Оливковый',         hex: '#6A7A48' },
+  { name: 'Хаки',              hex: '#8A9060' },
+  { name: 'Лесной',            hex: '#3A5A30' },
+  // Красные / терракота
+  { name: 'Пудровый розовый',  hex: '#D8A8A0' },
+  { name: 'Терракота',         hex: '#C17A5B' },
+  { name: 'Кирпичный',         hex: '#A85840' },
+  { name: 'Бургундский',       hex: '#7A2830' },
+  // Коричневые
+  { name: 'Карамельный',       hex: '#C4904A' },
+  { name: 'Коричневый',        hex: '#8A5830' },
+  { name: 'Шоколадный',        hex: '#5A3820' },
+  // Жёлтые / охра
+  { name: 'Охра',              hex: '#C8A048' },
+  { name: 'Горчичный',         hex: '#B89030' },
+  { name: 'Ржавый',            hex: '#B87040' },
+  // Фиолетовые
+  { name: 'Лавандовый',        hex: '#B0A0C8' },
+  { name: 'Сливовый',          hex: '#7A5880' },
+  // Бирюзовые
+  { name: 'Бирюзовый',         hex: '#6AA8A0' },
+  { name: 'Морская волна',      hex: '#4A8A8A' },
+]
 
 export const products: Product[] = [
   {
@@ -238,10 +295,7 @@ export const products: Product[] = [
       { label: 'Ширина в развёрнутом виде', value: '189 см' },
       { label: 'Высота', value: '200 см' },
     ],
-    colors: [
-      { name: '50+ цветов ткани', hex: '#C8BDB0' },
-      { name: 'Двусторонняя (под заказ)', hex: '#888888' },
-    ],
+    colors: FABRIC_COLORS,
     materials: ['Базальтовое волокно', 'Акустическая ткань'],
     finishes: ['Акустически прозрачная ткань'],
     absorptionCoeff: 0.75,
@@ -281,11 +335,7 @@ export const products: Product[] = [
       { label: 'Размер', value: '120 × 63 × 12 см' },
       { label: 'Общая глубина', value: '12 см' },
     ],
-    colors: [
-      { name: 'Чёрный (в наличии)', hex: '#1A1A1A' },
-      { name: 'Серый (в наличии)', hex: '#888888' },
-      { name: '40+ цветов под заказ', hex: '#C8BDB0' },
-    ],
+    colors: FABRIC_COLORS,
     materials: ['Базальтовое волокно', 'МДФ', 'Нетканое полотно'],
     finishes: ['Акустическая ткань', 'Натуральный хлопок (опция)', 'Лён (опция)'],
     absorptionCoeff: 0.85,
@@ -327,10 +377,7 @@ export const products: Product[] = [
       { label: 'Максимальный размер', value: '240 × 125 см' },
       { label: 'Толщина', value: '12 см' },
     ],
-    colors: [
-      { name: 'Любой цвет ткани', hex: '#C8BDB0' },
-      { name: 'Фотопечать', hex: '#7A5A3A' },
-    ],
+    colors: FABRIC_COLORS,
     materials: ['Базальтовое волокно', 'Хлопковое волокно', 'Алюминиевая рама', 'Деревянная рама'],
     finishes: ['Акустическая ткань', 'Фотопечать на ткани'],
     absorptionCoeff: 0.85,
@@ -371,10 +418,7 @@ export const products: Product[] = [
       { label: 'Максимальный размер', value: '240 × 125 см' },
       { label: 'Глубина', value: '11 см' },
     ],
-    colors: [
-      { name: 'Индивидуальный принт', hex: '#7A9FBF' },
-      { name: 'Деревянная рама (опция)', hex: '#C4A47A' },
-    ],
+    colors: [{ name: 'Фотопечать (любое изображение)', hex: '#7A9FBF' }, ...FABRIC_COLORS],
     materials: ['Базальтовая вата', 'Хлопковый наполнитель'],
     finishes: ['Полноцветная фотопечать на ткани', 'Деревянная рама'],
     absorptionCoeff: 0.80,
@@ -412,9 +456,7 @@ export const products: Product[] = [
       { label: 'Панели', value: '120 × 63 × 12 см (8 шт.)' },
       { label: 'Бас-ловушки', value: '60 × 60 × 120 см (4 шт.)' },
     ],
-    colors: [
-      { name: 'По выбору', hex: '#C8BDB0' },
-    ],
+    colors: FABRIC_COLORS,
     materials: ['Высокоплотный акустический наполнитель', 'Акустически прозрачная ткань'],
     finishes: ['Акустически прозрачная ткань'],
     absorptionCoeff: 0.88,
