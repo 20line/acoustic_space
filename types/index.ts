@@ -16,6 +16,7 @@ export interface Product {
   materials: string[]
   finishes: string[]
   absorptionCoeff: number
+  freqRange?: string
   tags: string[]
   featured: boolean
   relatedIds: string[]

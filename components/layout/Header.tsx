@@ -161,10 +161,21 @@ export function Header({ transparent = false }: HeaderProps) {
         <div className="wrap flex h-[66px] items-center justify-between gap-6">
           <Link
             href="/"
-            className="flex-shrink-0 text-2xl font-semibold tracking-[0.22em]"
-            style={{ fontFamily: 'var(--font-cormorant)', color: 'var(--ink)' }}
+            className="flex-shrink-0 flex items-center gap-2.5"
           >
-            ACOUSTIC SPACE
+            <span
+              className="hidden sm:inline-flex items-center justify-center rounded-sm border px-1.5 py-[3px] text-[8px] font-semibold tracking-[0.18em] uppercase leading-none"
+              style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+              aria-hidden
+            >
+              акустика
+            </span>
+            <span
+              className="text-2xl font-semibold tracking-[0.22em]"
+              style={{ fontFamily: 'var(--font-cormorant)', color: 'var(--ink)' }}
+            >
+              ACOUSTIC SPACE
+            </span>
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">

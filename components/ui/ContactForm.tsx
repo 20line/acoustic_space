@@ -136,11 +136,16 @@ export function ContactForm({ onSuccess, compact = false, defaultComment }: Cont
           type="email"
           className={`${fieldClass} ${normalFieldClass}`}
         />
-        <input
-          {...register('telegram')}
-          placeholder="Telegram (@username)"
-          className={`${fieldClass} ${normalFieldClass}`}
-        />
+        <div>
+          <input
+            {...register('telegram')}
+            placeholder="@username (Telegram)"
+            className={`${fieldClass} ${normalFieldClass}`}
+          />
+          <p className="mt-1 text-[11px]" style={{ color: 'var(--muted)' }}>
+            По желанию — для быстрого ответа
+          </p>
+        </div>
       </div>
 
       <div>

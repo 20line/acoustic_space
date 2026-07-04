@@ -186,26 +186,34 @@ export default function ProductInteractive({ product, cat, related }: Props) {
                 {product.colors.length > 0 && (
                   <div className="mb-6">
                     <p className="text-[13px] font-semibold mb-2 tracking-[0.06em] uppercase" style={{ color: 'var(--muted)' }}>
-                      Цвета / породы
+                      Доступные цвета
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {product.colors.map((color) => (
                         <span
                           key={color.name}
-                          title={color.name}
-                          className="h-8 w-8 rounded-full border-2 border-white shadow-sm"
-                          style={{ background: color.hex }}
-                          aria-label={color.name}
-                        />
+                          className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[13px]"
+                          style={{ borderColor: 'var(--line)', color: 'var(--ink)' }}
+                        >
+                          <span
+                            className="h-4 w-4 flex-shrink-0 rounded-full border border-white/50 shadow-sm"
+                            style={{ background: color.hex }}
+                            aria-hidden
+                          />
+                          {color.name}
+                        </span>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Absorption */}
+                {/* Absorption / Diffusion */}
                 <div className="mb-6 rounded-xl p-4" style={{ background: 'var(--sand)' }}>
                   <p className="text-[12px] tracking-[0.12em] uppercase mb-1" style={{ color: 'var(--muted)' }}>
-                    Коэффициент звукопоглощения
+                    {product.category === 'diffusers' ? 'Коэффициент рассеивания' : 'Коэффициент звукопоглощения'}
+                    {product.freqRange && (
+                      <span className="ml-1 normal-case tracking-normal">{product.freqRange}</span>
+                    )}
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--taupe)' }}>
@@ -417,6 +425,44 @@ export default function ProductInteractive({ product, cat, related }: Props) {
           </section>
         )}
 
+        {/* Related */}
+        {related.length > 0 && (
+          <section className="pad border-t" style={{ borderColor: 'var(--line)' }}>
+            <div className="wrap">
+              <RevealWrapper className="mb-10">
+                <h2 className="text-[clamp(24px,3vw,36px)] font-semibold" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                  Похожие изделия
+                </h2>
+              </RevealWrapper>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {related.map((r, i) => (
+                  <RevealWrapper key={r.id} delay={i * 70}>
+                    <Link
+                      href={`/catalog/${r.category}/${r.slug}`}
+                      className="group block overflow-hidden rounded-[8px] shadow-premium transition-transform duration-300 hover:-translate-y-2"
+                      style={{ background: 'var(--cream-2)' }}
+                    >
+                      <div className="relative aspect-[16/11] overflow-hidden">
+                        <Image src={r.thumbnail} alt={r.name} fill className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" sizes="33vw" />
+                        <div className="absolute inset-0 -z-10 tex-walnut" />
+                      </div>
+                      <div className="p-5">
+                        <h3 className="text-[22px] font-semibold" style={{ fontFamily: 'var(--font-cormorant)' }}>{r.name}</h3>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-[14px] font-semibold">от {r.price.toLocaleString('ru-RU')} ₽</span>
+                          <span className="text-[13px] font-semibold flex items-center gap-1" style={{ color: 'var(--accent)' }}>
+                            Подробнее <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" aria-hidden />
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  </RevealWrapper>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Reviews */}
         <section className="pad border-t" style={{ borderColor: 'var(--line)' }}>
           <div className="wrap">
@@ -506,44 +552,6 @@ export default function ProductInteractive({ product, cat, related }: Props) {
             </div>
           </div>
         </section>
-
-        {/* Related */}
-        {related.length > 0 && (
-          <section className="pad">
-            <div className="wrap">
-              <RevealWrapper className="mb-10">
-                <h2 className="text-[clamp(24px,3vw,36px)] font-semibold" style={{ fontFamily: 'var(--font-cormorant)' }}>
-                  Похожие изделия
-                </h2>
-              </RevealWrapper>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {related.map((r, i) => (
-                  <RevealWrapper key={r.id} delay={i * 70}>
-                    <Link
-                      href={`/catalog/${r.category}/${r.slug}`}
-                      className="group block overflow-hidden rounded-[8px] shadow-premium transition-transform duration-300 hover:-translate-y-2"
-                      style={{ background: 'var(--cream-2)' }}
-                    >
-                      <div className="relative aspect-[16/11] overflow-hidden">
-                        <Image src={r.thumbnail} alt={r.name} fill className="object-cover transition-transform duration-700 group-hover:scale-[1.06]" sizes="33vw" />
-                        <div className="absolute inset-0 -z-10 tex-walnut" />
-                      </div>
-                      <div className="p-5">
-                        <h3 className="text-[22px] font-semibold" style={{ fontFamily: 'var(--font-cormorant)' }}>{r.name}</h3>
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="text-[14px] font-semibold">от {r.price.toLocaleString('ru-RU')} ₽</span>
-                          <span className="text-[13px] font-semibold flex items-center gap-1" style={{ color: 'var(--accent)' }}>
-                            Подробнее <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" aria-hidden />
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  </RevealWrapper>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
       </main>
       <Footer />
       <BackToTop />
