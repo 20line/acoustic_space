@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import { Suspense } from 'react'
 import { cormorant, manrope, montserrat } from '@/lib/fonts'
 import { buildMetadata, defaultStructuredData } from '@/lib/metadata'
 import { CartProvider } from '@/context/CartContext'
 import { CartDrawer } from '@/components/cart/CartDrawer'
 import { NextAuthProvider } from '@/providers/NextAuthProvider'
 import { CookieBanner } from '@/components/ui/CookieBanner'
+import { YandexMetrika } from '@/components/analytics/YandexMetrika'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
@@ -43,6 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-cream text-ink antialiased">
+          <Suspense>
+            <YandexMetrika />
+          </Suspense>
           <NextAuthProvider>
             <CartProvider>
               {children}

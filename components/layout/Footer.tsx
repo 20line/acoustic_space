@@ -160,6 +160,7 @@ export function Footer() {
           <span>© {year} ACOUSTIC SPACE · Акустические панели премиум-класса</span>
           <div className="flex gap-5">
             <Link href="/privacy" className="hover:text-accent">Политика конфиденциальности</Link>
+            <Link href="/terms" className="hover:text-accent">Публичная оферта</Link>
             <Link href="/sitemap.xml" className="hover:text-accent">Карта сайта</Link>
           </div>
           <span>тишина и стиль</span>
