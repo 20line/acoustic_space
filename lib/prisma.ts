@@ -1,15 +1,25 @@
-import { neon, neonConfig, types } from '@neondatabase/serverless'
+import { neon, neonConfig } from '@neondatabase/serverless'
 import { PrismaNeonHTTP } from '@prisma/adapter-neon'
 import { PrismaClient } from '@prisma/client'
 
 neonConfig.fetchConnectionCache = true
 
-// Force timestamptz/timestamp columns to return ISO strings instead of Date objects.
-// Without this, PrismaNeonHTTP receives {} for DateTime fields and throws a
-// "Conversion failed: expected a string, found {}" error on complex queries.
-types.setTypeParser(1114, (val: string) => val) // timestamp
-types.setTypeParser(1184, (val: string) => val) // timestamptz
-types.setTypeParser(1082, (val: string) => val) // date
+// The neon() HTTP driver parses timestamptz/timestamp columns through its own
+// built-in parser (function pi) and returns JavaScript Date objects — NOT strings.
+// PrismaNeonHTTP expects ISO strings for DateTime fields and throws
+// "Conversion failed: expected a string, found {}" when it receives Date objects.
+// Fix: wrap the neon sql function so Date objects in results are serialised to
+// ISO strings before Prisma's adapter processes them.
+function toIso(val: unknown): unknown {
+  if (val instanceof Date) return val.toISOString()
+  if (Array.isArray(val)) return val.map(toIso)
+  if (val !== null && typeof val === 'object') {
+    return Object.fromEntries(
+      Object.entries(val as Record<string, unknown>).map(([k, v]) => [k, toIso(v)])
+    )
+  }
+  return val
+}
 
 // Lazy singleton — neon() must not be called at module evaluation time
 // because env vars are absent during Next.js build-time static analysis.
@@ -19,7 +29,17 @@ function getPrismaClient(): PrismaClient {
   if (_client) return _client
   // Neon HTTP API requires the direct endpoint, not the PgBouncer pooler.
   const connectionUrl = (process.env.DIRECT_URL || process.env.DATABASE_URL)!
-  const sql = neon(connectionUrl)
+  const rawSql = neon(connectionUrl)
+
+  // Proxy intercepts every call PrismaNeonHTTP makes to the sql function and
+  // converts Date objects to ISO strings in the returned result set.
+  const sql = new Proxy(rawSql, {
+    apply: async (_target, _thisArg, args: unknown[]) => {
+      const result = await Reflect.apply(rawSql, rawSql, args)
+      return toIso(result)
+    },
+  }) as typeof rawSql
+
   const adapter = new PrismaNeonHTTP(sql)
   _client = new PrismaClient({
     adapter,
