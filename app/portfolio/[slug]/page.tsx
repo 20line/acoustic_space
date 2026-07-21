@@ -10,8 +10,11 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { RevealWrapper } from '@/components/ui/RevealWrapper'
 import { CtaBandSection } from '@/components/sections/CtaBandSection'
 import { getProjectBySlug, portfolioProjects } from '@/data/portfolio'
+import { products } from '@/data/products'
+import { ProductCard } from '@/components/catalog/ProductCard'
 import { buildMetadata } from '@/lib/metadata'
 import { SITE_URL, SITE_NAME } from '@/lib/utils'
+import { Phone, Ruler } from 'lucide-react'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -170,6 +173,89 @@ export default async function ProjectPage({ params }: Props) {
             </div>
           </div>
         </section>
+
+        {/* CTA: Acoustic Measurement */}
+        <section className="pad border-t" style={{ borderColor: 'var(--line)', background: 'var(--walnut)' }}>
+          <div className="wrap">
+            <RevealWrapper>
+              <div className="flex flex-col items-center text-center text-white">
+                <Ruler size={36} className="mb-4 opacity-80" />
+                <h2
+                  className="text-[clamp(26px,3.5vw,42px)] font-semibold mb-3"
+                  style={{ fontFamily: 'var(--font-cormorant)' }}
+                >
+                  Хотите такой же результат?
+                </h2>
+                <p className="max-w-[520px] mb-8 text-[15px]" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                  Закажите акустический замер — наш инженер приедет, проведёт измерения и подберёт оптимальное решение для вашего помещения.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    href="/contacts"
+                    className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-[14px] font-semibold transition-transform hover:scale-[1.03]"
+                    style={{ background: '#fff', color: 'var(--walnut)' }}
+                  >
+                    <Ruler size={16} />
+                    Заказать замер
+                  </Link>
+                  <a
+                    href="tel:+74951234567"
+                    className="inline-flex items-center gap-2 rounded-full border px-8 py-3.5 text-[14px] font-semibold text-white transition-transform hover:scale-[1.03]"
+                    style={{ borderColor: 'rgba(255,255,255,0.3)' }}
+                  >
+                    <Phone size={16} />
+                    Позвонить инженеру
+                  </a>
+                </div>
+              </div>
+            </RevealWrapper>
+          </div>
+        </section>
+
+        {/* Related Products */}
+        {(() => {
+          const related = products.filter((p) =>
+            p.usageScenarios?.includes(project.category)
+          ).slice(0, 3)
+          if (related.length === 0) return null
+          return (
+            <section className="pad border-t" style={{ borderColor: 'var(--line)' }}>
+              <div className="wrap">
+                <RevealWrapper className="mb-10">
+                  <span className="eyebrow block mb-3">Использованные решения</span>
+                  <h2
+                    className="text-[clamp(26px,3.5vw,42px)] font-semibold"
+                    style={{ fontFamily: 'var(--font-cormorant)' }}
+                  >
+                    Продукция из каталога
+                  </h2>
+                </RevealWrapper>
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {related.map((p) => (
+                    <RevealWrapper key={p.id}>
+                      <ProductCard
+                        id={p.id}
+                        slug={p.slug}
+                        category={p.category}
+                        name={p.name}
+                        tagline={p.tagline}
+                        thumbnail={p.thumbnail}
+                        price={p.price}
+                        priceUnit={p.priceUnit}
+                        size="small"
+                      />
+                    </RevealWrapper>
+                  ))}
+                </div>
+                <RevealWrapper className="mt-10 text-center">
+                  <Link href="/catalog" className="btn btn-out">
+                    Весь каталог
+                  </Link>
+                </RevealWrapper>
+              </div>
+            </section>
+          )
+        })()}
 
         <CtaBandSection />
       </main>

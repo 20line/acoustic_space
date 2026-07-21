@@ -30,42 +30,11 @@ export function HeroSection() {
           blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI4MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzdiNTIzMiIvPjwvc3ZnPg=="
           sizes="100vw"
         />
-        {/* Fallback gradient when no image */}
+        {/* Shade for text readability */}
         <div
           className="absolute inset-0"
           style={{
-            background: `
-              radial-gradient(120% 90% at 78% 18%, rgba(60,72,96,.55), transparent 46%),
-              radial-gradient(80% 70% at 30% 65%, rgba(212,186,150,.5), transparent 60%),
-              linear-gradient(160deg,#6f5a44 0%,#8a7050 30%,#b39a78 60%,#cdb594 100%)
-            `,
-          }}
-          aria-hidden
-        />
-        {/* Walnut slats overlay left */}
-        <div
-          className="absolute left-0 top-0 bottom-0 w-[34%]"
-          style={{
-            background: 'repeating-linear-gradient(90deg,#7c5232 0 9px,#6a4528 9px 11px,#8a6038 11px 20px,#5d3c22 20px 22px)',
-            boxShadow: 'inset -40px 0 60px -30px rgba(0,0,0,.4)',
-            opacity: 0.96,
-          }}
-          aria-hidden
-        />
-        {/* Glow */}
-        <div
-          className="absolute right-[12%] top-[30%] h-[300px] w-[230px] rounded-full"
-          style={{
-            background: 'radial-gradient(circle,rgba(255,238,210,.5),transparent 65%)',
-            filter: 'blur(8px)',
-          }}
-          aria-hidden
-        />
-        {/* Shade */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(90deg,rgba(20,14,8,.42),transparent 55%),linear-gradient(0deg,rgba(20,14,8,.3),transparent 40%)',
+            background: 'linear-gradient(90deg,rgba(20,14,8,.52),transparent 60%),linear-gradient(0deg,rgba(20,14,8,.3),transparent 40%)',
           }}
           aria-hidden
         />

@@ -4,7 +4,7 @@ import { STATS } from '@/constants'
 
 export function AboutSection() {
   return (
-    <section className="pad" id="about">
+    <section className="pad" id="about" style={{ paddingBottom: 'clamp(36px, 4vw, 56px)' }}>
       <div className="wrap">
         <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
           {/* Text */}
@@ -51,7 +51,7 @@ export function AboutSection() {
               style={{ aspectRatio: '4/5' }}
             >
               <Image
-                src="/images/about/workshop.jpg"
+                src="/images/about/2.jpg"
                 alt="Цех производства акустических панелей ACOUSTIC SPACE"
                 fill
                 className="object-cover"

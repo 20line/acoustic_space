@@ -43,14 +43,14 @@ export function ProductCard({
     <div className="group relative overflow-hidden rounded-[8px] shadow-premium" style={{ background: 'var(--cream-2)' }}>
       {/* Whole card is a link */}
       <Link href={`/catalog/${category}/${slug}`} className="block" tabIndex={-1} aria-hidden="true">
-        <div className="relative aspect-[16/11] overflow-hidden">
+        <div className="relative aspect-[16/11] overflow-hidden" style={{ background: '#f5f3ef' }}>
           <Image
             src={thumbnail}
             alt={name}
             fill
-            className="object-cover transition-transform duration-700 ease-spring group-hover:scale-[1.06]"
+            className="object-contain p-3 transition-transform duration-700 ease-spring group-hover:scale-[1.04]"
             placeholder="blur"
-            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI1IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiM3YzUyMzIiLz48L3N2Zz4="
+            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI1IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmNWYzZWYiLz48L3N2Zz4="
             sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
           />
           <div className="absolute inset-0 -z-10 tex-walnut" />

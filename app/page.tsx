@@ -15,6 +15,7 @@ import { ClientsSection } from '@/components/sections/ClientsSection'
 import { ReviewsSection } from '@/components/sections/ReviewsSection'
 import { ProductionSection } from '@/components/sections/ProductionSection'
 import { CtaBandSection } from '@/components/sections/CtaBandSection'
+import { MarqueeSection } from '@/components/sections/MarqueeSection'
 import LenisProvider from '@/components/providers/LenisProvider'
 import { SITE_URL, SITE_NAME } from '@/lib/utils'
 
@@ -46,6 +47,7 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <AboutSection />
+        <MarqueeSection />
         <ProductCardsSection />
         <AdvantagesSection />
         <SolutionsSection />

@@ -198,7 +198,7 @@ export const products: Product[] = [
       '/images/catalog/diffusers/qrd7-1.jpg',
       '/images/catalog/diffusers/qrd7-2.jpg',
     ],
-    thumbnail: '/images/catalog/diffusers/qrd7-thumb.jpg',
+    thumbnail: '/images/catalog/diffusers/qrd7-1.jpg',
     specs: [
       { label: 'Тип', value: 'Диффузор Шредера 7-го порядка (QRD)' },
       { label: 'Рабочий диапазон', value: '600 Гц — 4 кГц' },

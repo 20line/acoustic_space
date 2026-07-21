@@ -89,6 +89,8 @@ export default function ProductInteractive({ product, cat, related }: Props) {
     setReviewSent(true)
   }, [product.id, reviewName, reviewRating, reviewText])
 
+  const gallery = [product.thumbnail, ...product.images.filter(img => img !== product.thumbnail)]
+
   const handleAddToCart = useCallback(async () => {
     await addItem({
       productId: product.id,
@@ -131,7 +133,7 @@ export default function ProductInteractive({ product, cat, related }: Props) {
                 <div className="flex flex-col gap-3">
                   <div className="relative aspect-[4/3] overflow-hidden rounded-xl shadow-premium">
                     <Image
-                      src={product.images[activeImage] ?? product.thumbnail}
+                      src={gallery[activeImage] ?? product.thumbnail}
                       alt={product.name}
                       fill
                       priority
@@ -142,9 +144,9 @@ export default function ProductInteractive({ product, cat, related }: Props) {
                     />
                     <div className="absolute inset-0 -z-10 tex-walnut" />
                   </div>
-                  {product.images.length > 1 && (
+                  {gallery.length > 1 && (
                     <div className="flex gap-3 overflow-x-auto pb-1" role="list" aria-label="Галерея">
-                      {product.images.map((img, i) => (
+                      {gallery.map((img, i) => (
                         <button
                           key={i}
                           role="listitem"

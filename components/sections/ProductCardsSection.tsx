@@ -8,7 +8,7 @@ export function ProductCardsSection() {
   const products = getFeaturedProducts()
 
   return (
-    <div className="relative z-10" style={{ marginTop: '-150px' }}>
+    <div className="relative z-10 py-16">
       <div className="wrap">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {products.map((product, i) => (

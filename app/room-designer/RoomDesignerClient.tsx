@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -54,6 +55,10 @@ interface RoomResult {
   diffQRDArea: number
   diffSkylineArea: number
   bassCorners: number
+  tubeTrapCount: number
+  basaltArea: number
+  prdArea: number
+  premiumArea: number
   listenPos: { x: number; y: number }
   speakerL: { x: number; y: number }
   speakerR: { x: number; y: number }
@@ -115,14 +120,9 @@ function computeRoom(cfg: RoomConfig): RoomResult {
   const ceilArea  = L * W
   const totalSurface = floorArea + ceilArea + frontArea + backArea + leftArea + rightArea
 
-  // Bare room RT60
   const bareA = totalSurface * BARE_ALPHA
   const bareRT60 = sabine(V, bareA)
 
-  // Target RT60
-  const targetMid = (pc.rtMin + pc.rtMax) / 2
-
-  // Listening & speaker positions (in meters)
   const listenX = L * cfg.listenX
   const listenY = W * cfg.listenY
 
@@ -131,61 +131,104 @@ function computeRoom(cfg: RoomConfig): RoomResult {
   const spkLY    = W / 2 - spreadY / 2
   const spkRY    = W / 2 + spreadY / 2
 
-  // First reflection on left wall (y=0): mirror listener across y=0
-  const leftReflX  = spkX + (listenX - spkX) * spkRY / (spkRY + listenY)
-  // First reflection on right wall (y=W): mirror listener across y=W
-  const rightReflX = spkX + (listenX - spkX) * (W - spkLY) / ((W - spkLY) + (W - listenY))
-  // Ceiling reflection (approx midpoint between speaker and listener)
+  // First reflections — left speaker → left wall, right speaker → right wall
+  const leftReflX_L  = spkX + (listenX - spkX) * spkLY / (spkLY + listenY)
+  const leftReflX_R  = spkX + (listenX - spkX) * spkRY / (spkRY + listenY)
+  const rightReflX_L = spkX + (listenX - spkX) * (W - spkRY) / ((W - spkRY) + (W - listenY))
+  const rightReflX_R = spkX + (listenX - spkX) * (W - spkLY) / ((W - spkLY) + (W - listenY))
   const ceilReflX  = (spkX + listenX) / 2
   const ceilReflY  = (spkLY + listenY) / 2
 
-  // Build panel zones
+  // Legacy compat
+  const leftReflX = (leftReflX_L + leftReflX_R) / 2
+  const rightReflX = (rightReflX_L + rightReflX_R) / 2
+
   const panels: PanelZone[] = []
+  const PW = 0.6  // standard panel width
+  const PH_WALL = 0.9  // standard panel height on wall
 
-  // Bass traps — all 4 floor-to-ceiling corners
+  // ── Bass traps — 4 corners ──
   panels.push(
-    { wall: 'front', type: 'bass-trap', x: 0,         y: 0, w: 0.3, h: H, label: 'Ловушка FL' },
-    { wall: 'front', type: 'bass-trap', x: W - 0.3,   y: 0, w: 0.3, h: H, label: 'Ловушка FR' },
-    { wall: 'back',  type: 'bass-trap', x: 0,         y: 0, w: 0.3, h: H, label: 'Ловушка BL' },
-    { wall: 'back',  type: 'bass-trap', x: W - 0.3,   y: 0, w: 0.3, h: H, label: 'Ловушка BR' },
+    { wall: 'front', type: 'bass-trap', x: 0,       y: 0, w: 0.3, h: H, label: 'БЛ' },
+    { wall: 'front', type: 'bass-trap', x: W - 0.3, y: 0, w: 0.3, h: H, label: 'БЛ' },
+    { wall: 'back',  type: 'bass-trap', x: 0,       y: 0, w: 0.3, h: H, label: 'БЛ' },
+    { wall: 'back',  type: 'bass-trap', x: W - 0.3, y: 0, w: 0.3, h: H, label: 'БЛ' },
   )
 
-  // Front wall — absorption, center section (skip corners already occupied)
-  const frontPanelW = Math.max(0.5, W - 0.6)
-  panels.push({ wall: 'front', type: 'absorption', x: 0.3, y: H * 0.15, w: frontPanelW, h: H * 0.70 })
+  // ── Front wall — 3 absorption panels between speakers ──
+  const frontUsable = W - 0.8
+  const frontCount = Math.max(2, Math.min(4, Math.floor(frontUsable / (PW + 0.15))))
+  const frontGap = (frontUsable - frontCount * PW) / (frontCount + 1)
+  for (let i = 0; i < frontCount; i++) {
+    const px = 0.4 + frontGap * (i + 1) + PW * i
+    panels.push({
+      wall: 'front', type: 'absorption',
+      x: px, y: H * 0.20, w: PW, h: PH_WALL,
+      label: i === Math.floor(frontCount / 2) ? 'Фронт поглощение' : undefined,
+    })
+  }
 
-  // Left wall — first reflection
-  const lrW = Math.min(1.2, L * 0.20)
-  panels.push({
-    wall: 'left', type: 'absorption',
-    x: Math.max(0.3, leftReflX - lrW / 2), y: H * 0.20, w: lrW, h: H * 0.55,
-    label: 'Первое отражение'
+  // ── Left wall — first reflections from both speakers ──
+  const lrW = Math.min(0.8, L * 0.15)
+  const leftPositions = [leftReflX_L, leftReflX_R].sort((a, b) => a - b)
+  // Add a rear absorption panel on left wall
+  const leftRear = L * 0.78
+  const leftAll = [...leftPositions, leftRear]
+  leftAll.forEach((rx, i) => {
+    const clampedX = Math.max(0.4, Math.min(L - 0.4 - lrW, rx - lrW / 2))
+    panels.push({
+      wall: 'left', type: i < 2 ? 'absorption' : 'absorption',
+      x: clampedX, y: H * 0.20, w: lrW, h: PH_WALL,
+      label: i < 2 ? `Отражение ${i === 0 ? 'L' : 'R'}` : 'Поглощение',
+    })
   })
 
-  // Right wall — mirror
-  panels.push({
-    wall: 'right', type: 'absorption',
-    x: Math.max(0.3, rightReflX - lrW / 2), y: H * 0.20, w: lrW, h: H * 0.55,
-    label: 'Первое отражение'
+  // ── Right wall — mirror of left ──
+  const rightPositions = [rightReflX_L, rightReflX_R].sort((a, b) => a - b)
+  const rightRear = L * 0.78
+  const rightAll = [...rightPositions, rightRear]
+  rightAll.forEach((rx, i) => {
+    const clampedX = Math.max(0.4, Math.min(L - 0.4 - lrW, rx - lrW / 2))
+    panels.push({
+      wall: 'right', type: 'absorption',
+      x: clampedX, y: H * 0.20, w: lrW, h: PH_WALL,
+      label: i < 2 ? `Отражение ${i === 0 ? 'R' : 'L'}` : 'Поглощение',
+    })
   })
 
-  // Back wall — QRD upper, absorption lower
-  const backPanelW = Math.max(0.5, W - 0.6)
+  // ── Back wall — 2 QRD diffusers + 2 absorption panels ──
+  const backUsable = W - 0.8
+  const backQrdW = Math.min(0.8, backUsable * 0.35)
+  const backAbsW = Math.min(0.6, backUsable * 0.25)
+  const backGap = (backUsable - 2 * backQrdW - 2 * backAbsW) / 5
+
   panels.push(
-    { wall: 'back', type: 'diffuser-qrd',  x: 0.3, y: H * 0.45, w: backPanelW, h: H * 0.50, label: 'QRD рассеивание' },
-    { wall: 'back', type: 'absorption',    x: 0.3, y: H * 0.10, w: backPanelW, h: H * 0.30, label: 'Поглощение низа' },
+    { wall: 'back', type: 'absorption',   x: 0.4 + backGap,                                     y: H * 0.15, w: backAbsW, h: PH_WALL, label: 'Поглощение' },
+    { wall: 'back', type: 'diffuser-qrd', x: 0.4 + backGap * 2 + backAbsW,                     y: H * 0.20, w: backQrdW, h: H * 0.55, label: 'QRD' },
+    { wall: 'back', type: 'diffuser-qrd', x: 0.4 + backGap * 3 + backAbsW + backQrdW,          y: H * 0.20, w: backQrdW, h: H * 0.55, label: 'QRD' },
+    { wall: 'back', type: 'absorption',   x: 0.4 + backGap * 4 + backAbsW + backQrdW * 2,      y: H * 0.15, w: backAbsW, h: PH_WALL, label: 'Поглощение' },
   )
 
-  // Ceiling — first reflection + skyline on rear zone
+  // ── Ceiling — 2 first-reflection panels + 1 skyline ──
+  const ceilPW = 1.0
+  // Reflection panel between speakers and listener (left speaker path)
+  const ceilRefl2Y = (spkRY + listenY) / 2
   panels.push(
-    { wall: 'ceiling', type: 'absorption',       x: Math.max(0, ceilReflX - 0.8), y: Math.max(0, ceilReflY - 0.8), w: 1.5, h: 1.5, label: 'Первое отражение' },
-    { wall: 'ceiling', type: 'diffuser-skyline', x: listenX - 0.6, y: W / 2 - 0.9, w: 1.2, h: 1.8, label: 'Skyline над слушателем' },
+    { wall: 'ceiling', type: 'absorption',       x: Math.max(0.2, ceilReflX - ceilPW / 2), y: Math.max(0.2, ceilReflY - ceilPW / 2), w: ceilPW, h: ceilPW, label: 'Потолок отр. L' },
+    { wall: 'ceiling', type: 'absorption',       x: Math.max(0.2, ceilReflX - ceilPW / 2), y: Math.max(0.2, ceilRefl2Y - ceilPW / 2), w: ceilPW, h: ceilPW, label: 'Потолок отр. R' },
+    { wall: 'ceiling', type: 'diffuser-skyline', x: Math.max(0.2, listenX - 0.5),          y: Math.max(0.2, W / 2 - 0.7),             w: 1.0, h: 1.4, label: 'Skyline' },
   )
 
   // Calculate panel areas
   const absArea     = roundTo5(panels.filter(p => p.type === 'absorption').reduce((s, p) => s + p.w * p.h, 0))
   const diffQRDArea = roundTo5(panels.filter(p => p.type === 'diffuser-qrd').reduce((s, p) => s + p.w * p.h, 0))
   const diffSkyArea = roundTo5(panels.filter(p => p.type === 'diffuser-skyline').reduce((s, p) => s + p.w * p.h, 0))
+
+  // Derived product quantities
+  const tubeTrapCount = 4
+  const basaltArea = roundTo5(absArea * 0.35)
+  const prdArea = roundTo5(Math.max(1, W * 0.4))
+  const premiumArea = roundTo5(absArea * 0.25)
 
   // Treated RT60 using Sabine
   const addedA = absArea * 0.85 + diffQRDArea * 0.12 + diffSkyArea * 0.10 + 4 * H * 0.35 * 0.70
@@ -204,6 +247,10 @@ function computeRoom(cfg: RoomConfig): RoomResult {
     diffQRDArea,
     diffSkylineArea: diffSkyArea,
     bassCorners:   4,
+    tubeTrapCount,
+    basaltArea,
+    prdArea,
+    premiumArea,
     listenPos:     { x: listenX, y: listenY },
     speakerL:      { x: spkX, y: spkLY },
     speakerR:      { x: spkX, y: spkRY },
@@ -219,9 +266,9 @@ function computeRoom(cfg: RoomConfig): RoomResult {
 // ─── 2D Floor Plan SVG ────────────────────────────────────────────────────────
 
 function FloorPlanSVG({ cfg, result }: { cfg: RoomConfig; result: RoomResult }) {
-  const SVG_W = 560
-  const SVG_H = 380
-  const MX = 54, MY = 44  // margins
+  const SVG_W = 600
+  const SVG_H = 420
+  const MX = 60, MY = 50
   const RW = SVG_W - MX * 2
   const RH = SVG_H - MY * 2
   const { length: L, width: W } = cfg
@@ -231,100 +278,134 @@ function FloorPlanSVG({ cfg, result }: { cfg: RoomConfig; result: RoomResult }) 
   const pw = (w: number) => (w / L) * RW
   const ph = (h: number) => (h / W) * RH
 
-  const WALL_T = 10  // wall thickness px
-  const PANEL_T = 8  // panel depth px on wall
+  const WALL_T = 6
+  const PANEL_D = 16
 
-  // Floor plan panels (only wall panels, ceiling shown as inset)
   const wallPanels = result.panels.filter(p => p.wall !== 'ceiling' && p.wall !== 'floor' && p.type !== 'bass-trap')
-  const bassTraps  = result.panels.filter(p => p.type === 'bass-trap')
   const ceilPanels = result.panels.filter(p => p.wall === 'ceiling')
 
+  const renderWallPanel = (p: PanelZone, i: number) => {
+    const color = ELEMENT_COLORS[p.type]
+    let rx = 0, ry = 0, rw = 0, rh = 0, tx = 0, ty = 0, labelRotate = ''
+
+    if (p.wall === 'front') {
+      rx = MX + WALL_T / 2; ry = sy(p.x); rw = PANEL_D; rh = ph(p.w)
+      tx = rx + PANEL_D + 3; ty = ry + rh / 2
+    } else if (p.wall === 'back') {
+      rx = MX + RW - WALL_T / 2 - PANEL_D; ry = sy(p.x); rw = PANEL_D; rh = ph(p.w)
+      tx = rx - 3; ty = ry + rh / 2
+    } else if (p.wall === 'left') {
+      rx = sx(p.x); ry = MY + WALL_T / 2; rw = pw(p.w); rh = PANEL_D
+      tx = rx + rw / 2; ty = ry + PANEL_D + 12
+    } else if (p.wall === 'right') {
+      rx = sx(p.x); ry = MY + RH - WALL_T / 2 - PANEL_D; rw = pw(p.w); rh = PANEL_D
+      tx = rx + rw / 2; ty = ry - 4
+    }
+
+    const anchor = p.wall === 'back' ? 'end' : p.wall === 'front' ? 'start' : 'middle'
+
+    return (
+      <g key={`wp${i}`}>
+        <rect x={rx} y={ry} width={rw} height={rh}
+          fill={color} fillOpacity={0.75} stroke={color} strokeWidth={1} rx={2} />
+        {p.label && (
+          <text x={tx} y={ty} textAnchor={anchor} dominantBaseline="middle"
+            style={{ fontSize: '8px', fill: color, fontFamily: 'sans-serif', fontWeight: 600 }}>
+            {p.label}
+          </text>
+        )}
+      </g>
+    )
+  }
+
+  const BT_S = 22
+
   return (
-    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full rounded-xl" style={{ maxHeight: 400, background: '#FAFAF8' }}>
+    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full rounded-xl" style={{ maxHeight: 440, background: '#FAFAF8' }}>
       {/* Grid */}
       {Array.from({ length: Math.ceil(L) + 1 }, (_, i) => (
         <line key={`gx${i}`} x1={sx(i)} y1={MY} x2={sx(i)} y2={MY + RH}
-          stroke="#E5E0D8" strokeWidth={0.5} strokeDasharray="3 4" />
+          stroke="#E8E4DC" strokeWidth={0.5} strokeDasharray="3 4" />
       ))}
       {Array.from({ length: Math.ceil(W) + 1 }, (_, i) => (
         <line key={`gy${i}`} x1={MX} y1={sy(i)} x2={MX + RW} y2={sy(i)}
-          stroke="#E5E0D8" strokeWidth={0.5} strokeDasharray="3 4" />
+          stroke="#E8E4DC" strokeWidth={0.5} strokeDasharray="3 4" />
       ))}
 
       {/* Room fill */}
-      <rect x={MX} y={MY} width={RW} height={RH} fill="#EFEBE4" />
+      <rect x={MX} y={MY} width={RW} height={RH} fill="#F0ECE5" rx={2} />
 
-      {/* Ceiling panels (shown semi-transparent as floor overlay) */}
-      {ceilPanels.map((p, i) => (
-        <rect key={`cp${i}`}
-          x={sx(p.x)} y={sy(p.y)} width={pw(p.w)} height={ph(p.h)}
-          fill={ELEMENT_COLORS[p.type]} fillOpacity={0.18}
-          stroke={ELEMENT_COLORS[p.type]} strokeWidth={1} strokeDasharray="4 3"
-          rx={3}
-        />
-      ))}
+      {/* Room outline (walls) */}
+      <rect x={MX} y={MY} width={RW} height={RH}
+        fill="none" stroke="#3D3028" strokeWidth={WALL_T} rx={2} />
 
-      {/* Wall panels — left wall (top edge) */}
-      {wallPanels.filter(p => p.wall === 'left').map((p, i) => (
-        <rect key={`lw${i}`}
-          x={sx(p.x)} y={MY} width={pw(p.w)} height={PANEL_T}
-          fill={ELEMENT_COLORS[p.type]} fillOpacity={0.85} rx={2}
-        />
-      ))}
-      {/* Wall panels — right wall (bottom edge) */}
-      {wallPanels.filter(p => p.wall === 'right').map((p, i) => (
-        <rect key={`rw${i}`}
-          x={sx(p.x)} y={MY + RH - PANEL_T} width={pw(p.w)} height={PANEL_T}
-          fill={ELEMENT_COLORS[p.type]} fillOpacity={0.85} rx={2}
-        />
-      ))}
-      {/* Wall panels — front wall (left edge) */}
-      {wallPanels.filter(p => p.wall === 'front').map((p, i) => (
-        <rect key={`fw${i}`}
-          x={MX} y={sy(p.x)} width={PANEL_T} height={ph(p.w)}
-          fill={ELEMENT_COLORS[p.type]} fillOpacity={0.85} rx={2}
-        />
-      ))}
-      {/* Wall panels — back wall (right edge) */}
-      {wallPanels.filter(p => p.wall === 'back').map((p, i) => (
-        <rect key={`bw${i}`}
-          x={MX + RW - PANEL_T} y={sy(p.x)} width={PANEL_T} height={ph(p.w)}
-          fill={ELEMENT_COLORS[p.type]} fillOpacity={0.85} rx={2}
-        />
-      ))}
+      {/* Wall panels — rendered INSIDE room, on top of walls */}
+      {wallPanels.map((p, i) => renderWallPanel(p, i))}
 
-      {/* Bass traps — corners */}
+      {/* Bass traps — corner wedges */}
       {[
-        { x: MX, y: MY },
-        { x: MX + RW, y: MY },
-        { x: MX, y: MY + RH },
-        { x: MX + RW, y: MY + RH },
-      ].map((c, i) => {
-        const s = 18
-        const pts = i === 0 ? `${c.x},${c.y} ${c.x + s},${c.y} ${c.x},${c.y + s}` :
-                    i === 1 ? `${c.x},${c.y} ${c.x - s},${c.y} ${c.x},${c.y + s}` :
-                    i === 2 ? `${c.x},${c.y} ${c.x + s},${c.y} ${c.x},${c.y - s}` :
-                              `${c.x},${c.y} ${c.x - s},${c.y} ${c.x},${c.y - s}`
-        return <polygon key={`bt${i}`} points={pts} fill={ELEMENT_COLORS['bass-trap']} fillOpacity={0.85} />
+        { cx: MX, cy: MY, pts: (s: number) => `${MX},${MY} ${MX + s},${MY} ${MX},${MY + s}` },
+        { cx: MX + RW, cy: MY, pts: (s: number) => `${MX + RW},${MY} ${MX + RW - s},${MY} ${MX + RW},${MY + s}` },
+        { cx: MX, cy: MY + RH, pts: (s: number) => `${MX},${MY + RH} ${MX + s},${MY + RH} ${MX},${MY + RH - s}` },
+        { cx: MX + RW, cy: MY + RH, pts: (s: number) => `${MX + RW},${MY + RH} ${MX + RW - s},${MY + RH} ${MX + RW},${MY + RH - s}` },
+      ].map((c, i) => (
+        <g key={`bt${i}`}>
+          <polygon points={c.pts(BT_S)} fill={ELEMENT_COLORS['bass-trap']} fillOpacity={0.8} stroke={ELEMENT_COLORS['bass-trap']} strokeWidth={1} />
+          <text x={c.cx + (c.cx === MX ? 8 : -8)} y={c.cy + (c.cy === MY ? 14 : -6)}
+            textAnchor="middle"
+            style={{ fontSize: '7px', fill: ELEMENT_COLORS['bass-trap'], fontFamily: 'sans-serif', fontWeight: 700 }}>
+            БЛ
+          </text>
+        </g>
+      ))}
+
+      {/* Ceiling panels — dashed outline, NOT filled */}
+      {ceilPanels.map((p, i) => {
+        const cx = sx(p.x) + pw(p.w) / 2
+        const cy = sy(p.y) + ph(p.h) / 2
+        return (
+          <g key={`cp${i}`}>
+            <rect x={sx(p.x)} y={sy(p.y)} width={pw(p.w)} height={ph(p.h)}
+              fill={ELEMENT_COLORS[p.type]} fillOpacity={0.08}
+              stroke={ELEMENT_COLORS[p.type]} strokeWidth={1.5} strokeDasharray="6 3"
+              rx={4} />
+            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+              style={{ fontSize: '8px', fill: ELEMENT_COLORS[p.type], fontFamily: 'sans-serif', fontWeight: 600, opacity: 0.7 }}>
+              {p.label || 'Потолок'}
+            </text>
+          </g>
+        )
       })}
 
-      {/* Room outline */}
-      <rect x={MX} y={MY} width={RW} height={RH}
-        fill="none" stroke="#3D3028" strokeWidth={WALL_T} />
-
-      {/* Ray lines — first reflections */}
+      {/* Ray lines — first reflections from both speakers to both walls */}
       {(() => {
         const lx = sx(result.listenPos.x), ly = sy(result.listenPos.y)
         const slx = sx(result.speakerL.x), sly = sy(result.speakerL.y)
         const srx = sx(result.speakerR.x), sry = sy(result.speakerR.y)
-        const lrx = sx(result.leftReflX),  lry = MY
-        const rrx = sx(result.rightReflX), rry = MY + RH
+
+        const rays: Array<{ sx: number; sy: number; rx: number; ry: number; color: string }> = []
+
+        // Left speaker reflections
+        const llReflX = result.speakerL.x + (result.listenPos.x - result.speakerL.x) * result.speakerL.y / (result.speakerL.y + result.listenPos.y)
+        const lrReflX = result.speakerL.x + (result.listenPos.x - result.speakerL.x) * (cfg.width - result.speakerL.y) / ((cfg.width - result.speakerL.y) + (cfg.width - result.listenPos.y))
+        rays.push({ sx: slx, sy: sly, rx: sx(llReflX), ry: MY, color: '#3B82F6' })
+        rays.push({ sx: slx, sy: sly, rx: sx(lrReflX), ry: MY + RH, color: '#3B82F6' })
+
+        // Right speaker reflections
+        const rlReflX = result.speakerR.x + (result.listenPos.x - result.speakerR.x) * result.speakerR.y / (result.speakerR.y + result.listenPos.y)
+        const rrReflX = result.speakerR.x + (result.listenPos.x - result.speakerR.x) * (cfg.width - result.speakerR.y) / ((cfg.width - result.speakerR.y) + (cfg.width - result.listenPos.y))
+        rays.push({ sx: srx, sy: sry, rx: sx(rlReflX), ry: MY, color: '#60A5FA' })
+        rays.push({ sx: srx, sy: sry, rx: sx(rrReflX), ry: MY + RH, color: '#60A5FA' })
+
         return (
-          <g opacity={0.35}>
-            <line x1={srx} y1={sry} x2={lrx} y2={lry} stroke="#3B82F6" strokeWidth={1} strokeDasharray="5 3" />
-            <line x1={lrx} y1={lry} x2={lx}  y2={ly}  stroke="#3B82F6" strokeWidth={1} strokeDasharray="5 3" />
-            <line x1={slx} y1={sly} x2={rrx} y2={rry} stroke="#3B82F6" strokeWidth={1} strokeDasharray="5 3" />
-            <line x1={rrx} y1={rry} x2={lx}  y2={ly}  stroke="#3B82F6" strokeWidth={1} strokeDasharray="5 3" />
+          <g opacity={0.25}>
+            {rays.map((r, i) => (
+              <g key={`ray${i}`}>
+                <line x1={r.sx} y1={r.sy} x2={r.rx} y2={r.ry} stroke={r.color} strokeWidth={1} strokeDasharray="5 3" />
+                <line x1={r.rx} y1={r.ry} x2={lx} y2={ly} stroke={r.color} strokeWidth={1} strokeDasharray="5 3" />
+                <circle cx={r.rx} cy={r.ry} r={3} fill={r.color} fillOpacity={0.5} />
+              </g>
+            ))}
           </g>
         )
       })()}
@@ -332,13 +413,13 @@ function FloorPlanSVG({ cfg, result }: { cfg: RoomConfig; result: RoomResult }) 
       {/* Speakers */}
       {[result.speakerL, result.speakerR].map((sp, i) => {
         const cx = sx(sp.x), cy = sy(sp.y)
-        const s = 9
+        const s = 8
         return (
           <g key={`sp${i}`}>
-            <polygon points={`${cx},${cy - s} ${cx - s},${cy + s} ${cx + s},${cy + s}`}
-              fill="#1A1A1A" opacity={0.8} />
-            <text x={cx} y={cy - s - 5} textAnchor="middle"
-              style={{ fontSize: '8px', fill: '#1A1A1A', fontFamily: 'monospace' }}>
+            <rect x={cx - s / 2} y={cy - s / 2} width={s} height={s} rx={2}
+              fill="#1A1A1A" opacity={0.85} />
+            <text x={cx} y={cy - s - 2} textAnchor="middle"
+              style={{ fontSize: '8px', fill: '#1A1A1A', fontFamily: 'monospace', fontWeight: 700 }}>
               {i === 0 ? 'L' : 'R'}
             </text>
           </g>
@@ -351,7 +432,7 @@ function FloorPlanSVG({ cfg, result }: { cfg: RoomConfig; result: RoomResult }) 
         return (
           <g>
             <circle cx={cx} cy={cy} r={10} fill="white" stroke="#1A1A1A" strokeWidth={1.5} fillOpacity={0.9} />
-            <circle cx={cx} cy={cy} r={3}  fill="#1A1A1A" />
+            <circle cx={cx} cy={cy} r={3} fill="#1A1A1A" />
             <text x={cx} y={cy + 20} textAnchor="middle"
               style={{ fontSize: '9px', fill: '#1A1A1A', fontFamily: 'sans-serif', fontWeight: 600 }}>
               МП
@@ -360,25 +441,43 @@ function FloorPlanSVG({ cfg, result }: { cfg: RoomConfig; result: RoomResult }) 
         )
       })()}
 
-      {/* Dimension labels */}
-      <text x={MX + RW / 2} y={MY - 8} textAnchor="middle"
+      {/* Dimension arrows + labels */}
+      <line x1={MX} y1={MY - 18} x2={MX + RW} y2={MY - 18} stroke="#6B5B4E" strokeWidth={0.8} markerStart="url(#arrowL)" markerEnd="url(#arrowR)" />
+      <text x={MX + RW / 2} y={MY - 22} textAnchor="middle"
         style={{ fontSize: '11px', fill: '#1A1A1A', fontFamily: 'monospace', fontWeight: 600 }}>
         {L} м
       </text>
-      <text x={MX - 10} y={MY + RH / 2} textAnchor="middle" dominantBaseline="middle"
-        transform={`rotate(-90, ${MX - 10}, ${MY + RH / 2})`}
+      <line x1={MX - 18} y1={MY} x2={MX - 18} y2={MY + RH} stroke="#6B5B4E" strokeWidth={0.8} />
+      <text x={MX - 24} y={MY + RH / 2} textAnchor="middle" dominantBaseline="middle"
+        transform={`rotate(-90, ${MX - 24}, ${MY + RH / 2})`}
         style={{ fontSize: '11px', fill: '#1A1A1A', fontFamily: 'monospace', fontWeight: 600 }}>
         {W} м
       </text>
 
       {/* Wall labels */}
-      <text x={MX + RW / 2} y={MY + RH + 18} textAnchor="middle"
-        style={{ fontSize: '9px', fill: '#6B5B4E', fontFamily: 'sans-serif' }}>
+      <text x={MX - 2} y={MY + RH / 2} textAnchor="middle" dominantBaseline="middle"
+        transform={`rotate(-90, ${MX - 2}, ${MY + RH / 2})`}
+        style={{ fontSize: '9px', fill: '#6B5B4E', fontFamily: 'sans-serif', letterSpacing: '0.05em' }}>
+        передняя (АС)
+      </text>
+      <text x={MX + RW + 2} y={MY + RH / 2} textAnchor="middle" dominantBaseline="middle"
+        transform={`rotate(90, ${MX + RW + 2}, ${MY + RH / 2})`}
+        style={{ fontSize: '9px', fill: '#6B5B4E', fontFamily: 'sans-serif', letterSpacing: '0.05em' }}>
         задняя стена
       </text>
-      <text x={MX + RW / 2} y={MY - 22} textAnchor="middle"
+      <text x={MX + RW / 2} y={MY - 34} textAnchor="middle"
         style={{ fontSize: '9px', fill: '#6B5B4E', fontFamily: 'sans-serif' }}>
-        передняя стена (АС)
+        левая стена
+      </text>
+      <text x={MX + RW / 2} y={MY + RH + 18} textAnchor="middle"
+        style={{ fontSize: '9px', fill: '#6B5B4E', fontFamily: 'sans-serif' }}>
+        правая стена
+      </text>
+
+      {/* Panel count badge */}
+      <text x={SVG_W - 10} y={SVG_H - 8} textAnchor="end"
+        style={{ fontSize: '9px', fill: '#A09888', fontFamily: 'sans-serif' }}>
+        {result.panels.length} зон обработки
       </text>
     </svg>
   )
@@ -973,8 +1072,31 @@ export default function RoomDesignerClient() {
                   unit: 'м²',
                   price: 7400,
                   href: '/catalog/fabric',
-                  slug: '/catalog/fabric/tkanevye-paneli-grafit',
+                  slug: '/catalog/fabric/panel-bazaltovoe-volokno',
                   note: 'Широкополосное поглощение 250–8000 Гц',
+                  image: '/images/catalog/fabric/graphite-1.jpg',
+                },
+                {
+                  type: 'absorption' as ElementType,
+                  name: 'Панель с базальтовым наполнителем',
+                  area: result.basaltArea,
+                  unit: 'м²',
+                  price: 8200,
+                  href: '/catalog/fabric',
+                  slug: '/catalog/fabric/panel-bazaltovoe-volokno',
+                  note: 'Усиленное поглощение НЧ, NRC 0.95',
+                  image: '/images/catalog/fabric/basalt-thumb.jpg',
+                },
+                {
+                  type: 'absorption' as ElementType,
+                  name: 'Премиум панель с замером RT60',
+                  area: result.premiumArea,
+                  unit: 'м²',
+                  price: 9800,
+                  href: '/catalog/fabric',
+                  slug: '/catalog/fabric/panel-premium-rt60',
+                  note: 'Калибровка под целевое время реверберации',
+                  image: '/images/catalog/fabric/premium-1.jpg',
                 },
                 {
                   type: 'diffuser-qrd' as ElementType,
@@ -985,16 +1107,29 @@ export default function RoomDesignerClient() {
                   href: '/catalog/diffusers',
                   slug: '/catalog/diffusers/diffuzory-qrd',
                   note: 'Рассеивание — задняя стена, потолок',
+                  image: '/images/catalog/diffusers/qrd-1.jpg',
+                },
+                {
+                  type: 'diffuser-qrd' as ElementType,
+                  name: 'PRD-диффузор (первичный корень)',
+                  area: result.prdArea,
+                  unit: 'м²',
+                  price: 12200,
+                  href: '/catalog/diffusers',
+                  slug: '/catalog/diffusers/diffuzor-prd-pervichnyj-koren',
+                  note: 'Фазовая рандомизация — передняя стена',
+                  image: '/images/catalog/diffusers/qrd-1.jpg',
                 },
                 {
                   type: 'diffuser-skyline' as ElementType,
-                  name: 'Диффузоры Skyline',
+                  name: 'Диффузоры Skyline 3D',
                   area: result.diffSkylineArea,
                   unit: 'м²',
                   price: 13800,
                   href: '/catalog/diffusers',
-                  slug: '/catalog/diffusers',
+                  slug: '/catalog/diffusers/diffuzor-skyline-3d',
                   note: '2D-рассеивание — потолок над слушателем',
+                  image: '/images/catalog/diffusers/skyline-thumb.jpg',
                 },
                 {
                   type: 'bass-trap' as ElementType,
@@ -1005,13 +1140,29 @@ export default function RoomDesignerClient() {
                   href: '/catalog/bass-traps',
                   slug: '/catalog/bass-traps/basovye-lovushki-uglovye',
                   note: `${result.bassCorners} угла × ${cfg.height} м высота`,
+                  image: '/images/catalog/bass-traps/corner-1.jpg',
                 },
-              ].map(item => {
+                {
+                  type: 'bass-trap' as ElementType,
+                  name: 'Tube Trap — цилиндрическая ловушка',
+                  area: result.tubeTrapCount,
+                  unit: 'шт.',
+                  price: 18500,
+                  href: '/catalog/bass-traps',
+                  slug: '/catalog/bass-traps/tube-trap-basovaya-lovushka',
+                  note: 'Стык стена-потолок, 60–300 Гц',
+                  image: '/images/catalog/bass-traps/tube-trap-1.jpg',
+                },
+              ].map((item, idx) => {
                 const totalCost = Math.round(item.area * (item.type === 'bass-trap' ? cfg.height : 1) * item.price / 1000) * 1000
                 return (
-                  <RevealWrapper key={item.type}>
-                    <div className="flex flex-col h-full rounded-2xl border p-5 transition-all hover:shadow-card"
+                  <RevealWrapper key={idx}>
+                    <div className="flex flex-col h-full rounded-2xl border overflow-hidden transition-all hover:shadow-card"
                       style={{ background: 'var(--cream)', borderColor: 'var(--line)' }}>
+                      <div className="relative w-full aspect-[4/3]">
+                        <Image src={item.image} alt={item.name} fill className="object-cover" sizes="(max-width:768px) 100vw, (max-width:1024px) 50vw, 25vw" />
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="h-3 w-3 rounded-full flex-shrink-0" style={{ background: ELEMENT_COLORS[item.type] }} />
                         <span className="text-[11px] font-semibold tracking-[0.06em] uppercase" style={{ color: 'var(--muted)' }}>
@@ -1041,6 +1192,7 @@ export default function RoomDesignerClient() {
                         style={{ borderColor: 'var(--line)', color: 'var(--ink)' }}>
                         В каталог →
                       </Link>
+                      </div>
                     </div>
                   </RevealWrapper>
                 )
@@ -1059,9 +1211,13 @@ export default function RoomDesignerClient() {
                     {(() => {
                       const total = (
                         result.absArea * 7400 +
+                        result.basaltArea * 8200 +
+                        result.premiumArea * 9800 +
                         result.diffQRDArea * 11400 +
+                        result.prdArea * 12200 +
                         result.diffSkylineArea * 13800 +
-                        result.bassCorners * cfg.height * 12600
+                        result.bassCorners * cfg.height * 12600 +
+                        result.tubeTrapCount * 18500
                       )
                       const min = Math.round(total / 1000) * 1000
                       const max = Math.round(total * 1.35 / 1000) * 1000

@@ -8,21 +8,21 @@ import { portfolioProjects } from '@/data/portfolio'
 
 const FILTERS = [
   { label: 'Все проекты', value: 'all' },
-  { label: 'Домашний кинотеатр', value: 'home-theater' },
-  { label: 'Студия', value: 'studio' },
-  { label: 'Офис', value: 'office' },
-  { label: 'Ресторан', value: 'restaurant' },
-  { label: 'Hi-Fi', value: 'hifi' },
-  { label: 'Репетиционная', value: 'rehearsal' },
+  { label: 'Домашние кинотеатры', value: 'home-theater' },
+  { label: 'Студии звукозаписи', value: 'studio' },
+  { label: 'Офисы и переговорные', value: 'office' },
+  { label: 'Рестораны и lounge', value: 'restaurant' },
+  { label: 'Hi-Fi комнаты', value: 'hifi' },
+  { label: 'Репетиционные базы', value: 'rehearsal' },
 ]
 
 const categoryLabels: Record<string, string> = {
-  studio: 'Студия',
-  'home-theater': 'Кинотеатр',
-  hifi: 'Hi-Fi',
-  office: 'Офис',
-  restaurant: 'Ресторан',
-  rehearsal: 'Репетиционная',
+  studio: 'Студия звукозаписи',
+  'home-theater': 'Домашний кинотеатр',
+  hifi: 'Hi-Fi комната',
+  office: 'Офис / переговорная',
+  restaurant: 'Ресторан / lounge',
+  rehearsal: 'Репетиционная база',
 }
 
 export function PortfolioGrid() {
