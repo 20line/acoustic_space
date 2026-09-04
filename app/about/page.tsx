@@ -12,6 +12,7 @@ import { ProcessSection } from '@/components/sections/ProcessSection'
 import { STATS } from '@/constants'
 import { buildMetadata } from '@/lib/metadata'
 import { SITE_URL, SITE_NAME } from '@/lib/utils'
+import { CONTACTS } from '@/lib/contacts'
 
 const orgSchema = {
   '@context': 'https://schema.org',
@@ -21,14 +22,14 @@ const orgSchema = {
   url: SITE_URL,
   foundingDate: '2010',
   description: 'Производство и монтаж премиальных акустических панелей в России',
-  telephone: '+79777903983',
-  email: 'hello@akusto.ru',
+  telephone: CONTACTS.phone,
+  email: CONTACTS.email,
   address: {
     '@type': 'PostalAddress',
     addressLocality: 'Москва',
     addressCountry: 'RU',
   },
-  sameAs: ['https://t.me/akusto'],
+  sameAs: [CONTACTS.telegram],
 }
 
 export const metadata: Metadata = buildMetadata({

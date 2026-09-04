@@ -11,9 +11,9 @@ export const metadata: Metadata = buildMetadata({
 })
 
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? 'ACOUSTIC SPACE'
-const SITE_EMAIL = process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru'
+const SITE_EMAIL = process.env.NEXT_PUBLIC_EMAIL ?? 'hello@acousticspace.ru'
 const SITE_PHONE = process.env.NEXT_PUBLIC_PHONE_DISPLAY ?? '+7 977 790-39-83'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'acoustic-space.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://acousticspace.ru'
 
 export default function TermsPage() {
   return (

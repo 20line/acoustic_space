@@ -9,7 +9,7 @@ export const CONTACTS = {
   phone: rawPhone,
   /** Human-readable phone, e.g. +7 977 790-39-83 */
   phoneDisplay: process.env.NEXT_PUBLIC_PHONE_DISPLAY ?? '+7 977 790-39-83',
-  email: process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru',
+  email: process.env.NEXT_PUBLIC_EMAIL ?? 'hello@acousticspace.ru',
   /** Full https link to the Telegram account */
   telegram: process.env.NEXT_PUBLIC_TELEGRAM ?? 'https://t.me/acousticspace',
   /** @-handle for display, e.g. @acousticspace */

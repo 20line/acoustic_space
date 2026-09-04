@@ -13,7 +13,7 @@ export const metadata: Metadata = buildMetadata({
 })
 
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? 'ACOUSTIC SPACE'
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://akusto.ru'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://acousticspace.ru'
 
 export default function ConsentPage() {
   return (

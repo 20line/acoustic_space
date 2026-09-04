@@ -11,7 +11,7 @@ export const metadata: Metadata = buildMetadata({
 })
 
 const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? 'ACOUSTIC SPACE'
-const SITE_EMAIL = process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru'
+const SITE_EMAIL = process.env.NEXT_PUBLIC_EMAIL ?? 'hello@acousticspace.ru'
 
 export default function PrivacyPage() {
   return (
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
               <p className="text-[14px] leading-relaxed" style={{ color: 'var(--muted)' }}>
                 Настоящая Политика конфиденциальности (далее — «Политика») регулирует порядок обработки
                 персональных данных пользователей сайта <strong style={{ color: 'var(--ink)' }}>{SITE_NAME}</strong>,
-                расположенного по адресу {process.env.NEXT_PUBLIC_SITE_URL ?? 'akusto.ru'}.
+                расположенного по адресу {process.env.NEXT_PUBLIC_SITE_URL ?? 'acousticspace.ru'}.
                 Политика составлена в соответствии с требованиями Федерального закона от 27.07.2006 № 152-ФЗ
                 «О персональных данных».
               </p>

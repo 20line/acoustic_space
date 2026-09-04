@@ -21,8 +21,11 @@ function getPrismaClient(): PrismaClient {
   const pool = new Pool({
     connectionString,
     max: 5,
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 30_000,
+    // Neon free-tier compute cold-starts can take 10s+; give the first
+    // connection room before the retry wrapper takes over.
+    connectionTimeoutMillis: 20_000,
+    keepAlive: true,
   })
   // Neon drops idle connections; swallow the resulting async error events so
   // they don't crash the process — the retry wrapper re-runs the query.
@@ -47,8 +50,9 @@ export const prisma = new Proxy<PrismaClient>({} as PrismaClient, {
 })
 
 export async function dbRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const MAX_ATTEMPTS = 4
   let lastErr: unknown
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
     try {
       return await fn()
     } catch (err) {
@@ -59,11 +63,15 @@ export async function dbRetry<T>(fn: () => Promise<T>): Promise<T> {
         msg.includes('Connection terminated') ||
         msg.includes('ECONNRESET') ||
         msg.includes('ECONNREFUSED') ||
+        msg.includes('ETIMEDOUT') ||
         msg.includes('fetch failed') ||
         msg.includes('timeout') ||
+        msg.includes('Timed out') ||
+        msg.includes('Closed') ||
         msg.includes('network')
-      if (isTransient && i < 2) {
-        await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
+      if (isTransient && i < MAX_ATTEMPTS - 1) {
+        // Neon compute may still be waking — back off progressively.
+        await new Promise((r) => setTimeout(r, 1500 * (i + 1)))
         continue
       }
       throw err

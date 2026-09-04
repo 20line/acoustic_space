@@ -62,7 +62,7 @@ export const defaultStructuredData = {
   description: 'Производство и монтаж премиальных акустических панелей',
   url: SITE_URL,
   telephone: process.env.NEXT_PUBLIC_PHONE ?? '+79777903983',
-  email: process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru',
+  email: process.env.NEXT_PUBLIC_EMAIL ?? 'hello@acousticspace.ru',
   address: {
     '@type': 'PostalAddress',
     addressLocality: process.env.NEXT_PUBLIC_CITY ?? 'Москва',

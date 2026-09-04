@@ -31,5 +31,5 @@ export function getImagePlaceholder(width = 8, height = 5): string {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`
 }
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://akusto.ru'
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://acousticspace.ru'
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? 'ACOUSTIC SPACE'

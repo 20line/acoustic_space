@@ -276,8 +276,8 @@ export default function OrderClient() {
           <div className="mt-8 text-center">
             <p className="text-[13px]" style={{ color: 'var(--muted)' }}>
               Вопросы?{' '}
-              <a href={`mailto:${process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru'}`} className="underline underline-offset-2 hover:text-accent">
-                {process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru'}
+              <a href={`mailto:${process.env.NEXT_PUBLIC_EMAIL ?? 'hello@acousticspace.ru'}`} className="underline underline-offset-2 hover:text-accent">
+                {process.env.NEXT_PUBLIC_EMAIL ?? 'hello@acousticspace.ru'}
               </a>
             </p>
           </div>

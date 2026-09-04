@@ -10,6 +10,7 @@ import { generateInvoiceNumber } from '@/lib/invoice-number'
 import { sendOrderTelegram } from '@/lib/telegram'
 import { calcDeliveryFee } from '@/lib/delivery'
 import { sendMail, orderConfirmHtml } from '@/lib/mailer'
+import { SITE_URL } from '@/lib/utils'
 
 const createOrderSchema = z.object({
   customerName: z.string().min(2).max(100),
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     const session = await getServerSession(authOptions)
     const userId = session?.user?.id ?? undefined
-    const cart = await getOrCreateCart(userId)
+    const cart = await dbRetry(() => getOrCreateCart(userId))
 
     if (cart.items.length === 0) {
       return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
@@ -160,8 +161,7 @@ export async function POST(req: NextRequest) {
       }).catch(() => {})
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
-    const adminUrl = siteUrl ? `${siteUrl}/admin/orders?order=${number}` : undefined
+    const adminUrl = `${SITE_URL}/admin/orders?order=${number}`
 
     // Telegram + Email notifications in parallel
     const [tgResult] = await Promise.allSettled([

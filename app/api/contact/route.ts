@@ -55,8 +55,8 @@ export async function POST(req: NextRequest) {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL ?? 'noreply@akusto.ru',
-          to: [process.env.RESEND_TO_EMAIL ?? 'hello@akusto.ru'],
+          from: process.env.RESEND_FROM_EMAIL ?? 'noreply@acousticspace.ru',
+          to: [process.env.RESEND_TO_EMAIL ?? 'hello@acousticspace.ru'],
           subject: `Новая заявка от ${name}`,
           html: `
             <h2>Новая заявка с сайта ACOUSTIC SPACE</h2>
