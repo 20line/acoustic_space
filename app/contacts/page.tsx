@@ -9,6 +9,7 @@ import { RevealWrapper } from '@/components/ui/RevealWrapper'
 import { ContactForm } from '@/components/ui/ContactForm'
 import { buildMetadata } from '@/lib/metadata'
 import { SITE_URL, SITE_NAME } from '@/lib/utils'
+import { CONTACTS } from '@/lib/contacts'
 
 export const metadata: Metadata = buildMetadata({
   title: 'Контакты',
@@ -17,10 +18,10 @@ export const metadata: Metadata = buildMetadata({
 })
 
 export default function ContactsPage() {
-  const phone = process.env.NEXT_PUBLIC_PHONE_DISPLAY ?? '+7 977 790-39-83'
-  const email = process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru'
-  const telegram = process.env.NEXT_PUBLIC_TELEGRAM ?? '#'
-  const whatsapp = process.env.NEXT_PUBLIC_WHATSAPP ?? '#'
+  const phone = CONTACTS.phoneDisplay
+  const email = CONTACTS.email
+  const telegram = CONTACTS.telegram
+  const whatsapp = CONTACTS.whatsapp
 
   const contactSchema = {
     '@context': 'https://schema.org',
@@ -93,7 +94,7 @@ export default function ContactsPage() {
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.09 9.77 19.79 19.79 0 012 1.18 2 2 0 014 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14z" /></svg>}
                     label="Телефон"
                     value={phone}
-                    href={`tel:${process.env.NEXT_PUBLIC_PHONE}`}
+                    href={`tel:${CONTACTS.phone}`}
                   />
                   <ContactItem
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>}
@@ -104,7 +105,7 @@ export default function ContactsPage() {
                   <ContactItem
                     icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.448 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.17 13.547l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.978.012z" /></svg>}
                     label="Telegram"
-                    value="@akusto"
+                    value={CONTACTS.telegramHandle}
                     href={telegram}
                     external
                   />

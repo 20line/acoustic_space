@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ConsentCheckbox } from '@/components/ui/ConsentCheckbox'
 
 const schema = z.object({
   name: z.string().min(2, 'Минимум 2 символа').max(100),
@@ -17,6 +18,9 @@ const schema = z.object({
     .min(8, 'Минимум 8 символов')
     .regex(/[A-Za-z]/, 'Должен содержать латинские буквы')
     .regex(/[0-9]/, 'Должен содержать цифру'),
+  consent: z.boolean().refine((v) => v === true, {
+    message: 'Необходимо согласие на обработку персональных данных',
+  }),
 })
 type FormData = z.infer<typeof schema>
 
@@ -28,15 +32,19 @@ export function EmailRegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  } = useForm<FormData>({ resolver: zodResolver(schema), defaultValues: { consent: false } })
+
+  const consentGiven = watch('consent') === true
 
   const onSubmit = async (data: FormData) => {
     setServerError('')
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ name: data.name, email: data.email, password: data.password, consent: data.consent }),
     })
 
     if (!res.ok) {
@@ -111,10 +119,16 @@ export function EmailRegisterForm({ onSwitchToLogin }: { onSwitchToLogin: () => 
         <p className="rounded-[6px] bg-red-50 px-4 py-2.5 text-[13px] text-red-600">{serverError}</p>
       )}
 
+      <ConsentCheckbox
+        checked={consentGiven}
+        onChange={(v) => setValue('consent', v, { shouldValidate: true })}
+      />
+      {errors.consent && <p className="-mt-2 text-[12px] text-red-500">{errors.consent.message}</p>}
+
       <button
         type="submit"
-        disabled={isSubmitting}
-        className="btn btn-dark w-full justify-center gap-2 disabled:opacity-60"
+        disabled={isSubmitting || !consentGiven}
+        className="btn btn-dark w-full justify-center gap-2 disabled:opacity-50"
       >
         {isSubmitting && <Loader2 size={16} className="animate-spin" />}
         Создать аккаунт

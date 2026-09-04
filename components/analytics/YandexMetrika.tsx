@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import Script from 'next/script'
+import { getConsent, onConsentChange } from '@/lib/consent'
 
 const ID = process.env.NEXT_PUBLIC_METRIKA_ID
 
@@ -12,21 +13,28 @@ declare global {
   }
 }
 
-function MetrikaPageview() {
+function MetrikaPageview({ enabled }: { enabled: boolean }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    if (!ID || typeof window.ym !== 'function') return
+    if (!enabled || !ID || typeof window.ym !== 'function') return
     const url = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '')
     window.ym(Number(ID), 'hit', url)
-  }, [pathname, searchParams])
+  }, [enabled, pathname, searchParams])
 
   return null
 }
 
 export function YandexMetrika() {
-  if (!ID) return null
+  const [allowed, setAllowed] = useState(false)
+
+  useEffect(() => {
+    setAllowed(getConsent() === 'accepted')
+    return onConsentChange((v) => setAllowed(v === 'accepted'))
+  }, [])
+
+  if (!ID || !allowed) return null
 
   return (
     <>
@@ -54,7 +62,7 @@ export function YandexMetrika() {
           />
         </div>
       </noscript>
-      <MetrikaPageview />
+      <MetrikaPageview enabled={allowed} />
     </>
   )
 }

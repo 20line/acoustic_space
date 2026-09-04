@@ -7,6 +7,7 @@ import { useCart } from '@/context/CartContext'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { ConsentCheckbox } from '@/components/ui/ConsentCheckbox'
 
 type DeliveryType = 'PICKUP' | 'COURIER' | 'TRANSPORT'
 
@@ -23,6 +24,7 @@ interface FormData {
   legalInn: string
   legalKpp: string
   legalAddress: string
+  consent: boolean
 }
 
 interface PromoState {
@@ -71,6 +73,7 @@ export default function CheckoutClient() {
     legalInn: '',
     legalKpp: '',
     legalAddress: '',
+    consent: false,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -122,6 +125,11 @@ export default function CheckoutClient() {
       return
     }
 
+    if (!form.consent) {
+      setError('Необходимо согласие на обработку персональных данных')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/orders', {
@@ -140,6 +148,7 @@ export default function CheckoutClient() {
           legalKpp: form.wantsInvoice ? (form.legalKpp || undefined) : undefined,
           legalAddress: form.wantsInvoice ? (form.legalAddress || undefined) : undefined,
           promoCode: promo.code || undefined,
+          consent: form.consent,
         }),
       })
 
@@ -507,19 +516,21 @@ export default function CheckoutClient() {
                   </div>
                 )}
 
+                <div className="mb-4">
+                  <ConsentCheckbox
+                    checked={form.consent}
+                    onChange={(v) => set('consent', v)}
+                  />
+                </div>
+
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full rounded-[6px] py-3.5 text-[14px] font-semibold text-white transition-opacity disabled:opacity-60"
+                  disabled={loading || !form.consent}
+                  className="w-full rounded-[6px] py-3.5 text-[14px] font-semibold text-white transition-opacity disabled:opacity-50"
                   style={{ background: 'var(--accent)' }}
                 >
                   {loading ? 'Отправляем заявку...' : 'Отправить заявку'}
                 </button>
-
-                <p className="text-[11px] text-center mt-3" style={{ color: 'var(--taupe)' }}>
-                  Нажимая кнопку, вы соглашаетесь с{' '}
-                  <Link href="/privacy" className="underline hover:text-accent">политикой конфиденциальности</Link>
-                </p>
 
                 <Link
                   href="/catalog"

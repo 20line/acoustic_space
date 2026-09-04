@@ -7,6 +7,7 @@ import { FloatingContact } from '@/components/ui/FloatingContact'
 import { HeroSection } from '@/components/sections/HeroSection'
 import { AboutSection } from '@/components/sections/AboutSection'
 import { ProductCardsSection } from '@/components/sections/ProductCardsSection'
+import { MobileToolsSection } from '@/components/sections/MobileToolsSection'
 import { AdvantagesSection } from '@/components/sections/AdvantagesSection'
 import { SolutionsSection } from '@/components/sections/SolutionsSection'
 import { SegmentsSection } from '@/components/sections/SegmentsSection'
@@ -46,6 +47,7 @@ export default function HomePage() {
       <Header transparent />
       <main>
         <HeroSection />
+        <MobileToolsSection />
         <AboutSection />
         <MarqueeSection />
         <ProductCardsSection />

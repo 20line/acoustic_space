@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from './Button'
+import { ConsentCheckbox } from './ConsentCheckbox'
 import { ROOM_TYPES } from '@/constants'
 
 const schema = z.object({
@@ -17,6 +18,9 @@ const schema = z.object({
   telegram: z.string().optional(),
   roomType: z.string().min(1, 'Выберите тип помещения'),
   comment: z.string().max(1000).optional(),
+  consent: z.boolean().refine((v) => v === true, {
+    message: 'Необходимо согласие на обработку персональных данных',
+  }),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -36,15 +40,19 @@ export function ContactForm({ onSuccess, compact = false, defaultComment }: Cont
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
-  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { comment: defaultComment } })
+  } = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { comment: defaultComment, consent: false } })
+
+  const consentGiven = watch('consent') === true
 
   const onSubmit = async (data: FormValues) => {
     setStatus('loading')
     try {
       const formData = new FormData()
       Object.entries(data).forEach(([k, v]) => {
-        if (v) formData.append(k, v as string)
+        if (v !== undefined && v !== null && v !== '') formData.append(k, String(v))
       })
       files.forEach((f) => formData.append('files', f))
 
@@ -239,16 +247,21 @@ export function ContactForm({ onSuccess, compact = false, defaultComment }: Cont
         <p className="text-sm text-red-500">Ошибка отправки. Попробуйте снова или позвоните нам.</p>
       )}
 
-      <Button type="submit" variant="dark" loading={status === 'loading'} className="w-full justify-center">
+      <ConsentCheckbox
+        checked={consentGiven}
+        onChange={(v) => setValue('consent', v, { shouldValidate: true })}
+      />
+      {errors.consent && <p className="-mt-2 text-xs text-red-500">{errors.consent.message}</p>}
+
+      <Button
+        type="submit"
+        variant="dark"
+        loading={status === 'loading'}
+        disabled={!consentGiven}
+        className="w-full justify-center disabled:opacity-50"
+      >
         Рассчитать проект
       </Button>
-
-      <p className="text-center text-[11px]" style={{ color: 'var(--muted)' }}>
-        Отправляя форму, вы соглашаетесь с{' '}
-        <a href="/privacy" className="underline underline-offset-2">
-          политикой конфиденциальности
-        </a>
-      </p>
     </form>
   )
 }

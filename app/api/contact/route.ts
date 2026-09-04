@@ -14,6 +14,10 @@ const schema = z.object({
   telegram: z.string().optional(),
   roomType: z.string().optional(),
   comment: z.string().max(2000).optional(),
+  // 152-ФЗ: explicit personal-data processing consent is mandatory
+  consent: z
+    .union([z.literal('true'), z.literal('on'), z.literal(true)])
+    .transform(() => true),
 })
 
 export async function POST(req: NextRequest) {

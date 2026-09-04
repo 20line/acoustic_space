@@ -1,46 +1,34 @@
-import { neon, neonConfig } from '@neondatabase/serverless'
-import { PrismaNeonHTTP } from '@prisma/adapter-neon'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
+import { Pool } from 'pg'
 
-neonConfig.fetchConnectionCache = true
+// ─────────────────────────────────────────────────────────────────────────────
+// Neon free tier suspends compute when idle, which drops TCP connections and
+// makes the HTTP/WebSocket adapters fail (the HTTP adapter also cannot run the
+// transactions that Prisma `include`/nested writes need — that broke the cart
+// and order APIs). A pg.Pool pointed at Neon's PgBouncer *pooler* URL plus a
+// small retry wrapper is the stable combination. See memory: feedback-db-neon.
+// ─────────────────────────────────────────────────────────────────────────────
 
-// The neon() HTTP driver parses timestamptz/timestamp columns through its own
-// built-in parser (function pi) and returns JavaScript Date objects — NOT strings.
-// PrismaNeonHTTP expects ISO strings for DateTime fields and throws
-// "Conversion failed: expected a string, found {}" when it receives Date objects.
-// Fix: wrap the neon sql function so Date objects in results are serialised to
-// ISO strings before Prisma's adapter processes them.
-function toIso(val: unknown): unknown {
-  if (val instanceof Date) return val.toISOString()
-  if (Array.isArray(val)) return val.map(toIso)
-  if (val !== null && typeof val === 'object') {
-    return Object.fromEntries(
-      Object.entries(val as Record<string, unknown>).map(([k, v]) => [k, toIso(v)])
-    )
-  }
-  return val
-}
-
-// Lazy singleton — neon() must not be called at module evaluation time
-// because env vars are absent during Next.js build-time static analysis.
 let _client: PrismaClient | undefined
 
 function getPrismaClient(): PrismaClient {
   if (_client) return _client
-  // Neon HTTP API requires the direct endpoint, not the PgBouncer pooler.
-  const connectionUrl = (process.env.DIRECT_URL || process.env.DATABASE_URL)!
-  const rawSql = neon(connectionUrl)
 
-  // Proxy intercepts every call PrismaNeonHTTP makes to the sql function and
-  // converts Date objects to ISO strings in the returned result set.
-  const sql = new Proxy(rawSql, {
-    apply: async (_target, _thisArg, args: unknown[]) => {
-      const result = await Reflect.apply(rawSql, rawSql, args)
-      return toIso(result)
-    },
-  }) as typeof rawSql
+  // Pooler URL (…-pooler…?pgbouncer=true&sslmode=require) — survives cold starts.
+  const connectionString = (process.env.DATABASE_URL || process.env.DIRECT_URL)!
 
-  const adapter = new PrismaNeonHTTP(sql)
+  const pool = new Pool({
+    connectionString,
+    max: 5,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
+  })
+  // Neon drops idle connections; swallow the resulting async error events so
+  // they don't crash the process — the retry wrapper re-runs the query.
+  pool.on('error', () => {})
+
+  const adapter = new PrismaPg(pool)
   _client = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
@@ -48,8 +36,8 @@ function getPrismaClient(): PrismaClient {
   return _client
 }
 
-// Proxy keeps the same `prisma.model.method()` API for callers but defers
-// the actual PrismaClient construction until the first property access.
+// Proxy keeps the `prisma.model.method()` API but defers client construction
+// until first access (env vars are absent during build-time static analysis).
 export const prisma = new Proxy<PrismaClient>({} as PrismaClient, {
   get: (_target, prop: string | symbol) => {
     const client = getPrismaClient()
@@ -68,12 +56,14 @@ export async function dbRetry<T>(fn: () => Promise<T>): Promise<T> {
       const msg = err instanceof Error ? err.message : ''
       const isTransient =
         msg.includes('terminated') ||
+        msg.includes('Connection terminated') ||
         msg.includes('ECONNRESET') ||
         msg.includes('ECONNREFUSED') ||
         msg.includes('fetch failed') ||
+        msg.includes('timeout') ||
         msg.includes('network')
       if (isTransient && i < 2) {
-        await new Promise(r => setTimeout(r, 1000 * (i + 1)))
+        await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
         continue
       }
       throw err

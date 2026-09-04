@@ -25,6 +25,8 @@ const createOrderSchema = z.object({
   legalInn: z.string().max(12).optional(),
   legalKpp: z.string().max(9).optional(),
   legalAddress: z.string().max(500).optional(),
+  // 152-ФЗ: explicit personal-data processing consent is mandatory
+  consent: z.literal(true, { message: 'Необходимо согласие на обработку персональных данных' }),
 })
 
 // GET /api/orders — list orders for authenticated user
@@ -158,18 +160,34 @@ export async function POST(req: NextRequest) {
       }).catch(() => {})
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+    const adminUrl = siteUrl ? `${siteUrl}/admin/orders?order=${number}` : undefined
+
     // Telegram + Email notifications in parallel
-    await Promise.allSettled([
+    const [tgResult] = await Promise.allSettled([
       sendOrderTelegram({
         orderNumber: number,
         customerName,
         customerPhone,
-        customerEmail: customerEmail ?? undefined,
+        customerEmail: customerEmail || null,
         items: order.items,
+        subtotal,
+        deliveryFee,
+        promoDiscount,
         total,
         deliveryType,
+        deliveryAddress: deliveryAddress || null,
         paymentMethod,
         promoCode: validatedPromoCode,
+        comment: comment || null,
+        invoiceNumber,
+        legal: {
+          name: legalName || null,
+          inn: legalInn || null,
+          kpp: legalKpp || null,
+          address: legalAddress || null,
+        },
+        adminUrl,
       }),
       customerEmail
         ? sendMail({
@@ -184,6 +202,10 @@ export async function POST(req: NextRequest) {
           })
         : Promise.resolve(),
     ])
+
+    if (tgResult.status === 'rejected' || !tgResult.value) {
+      console.error('[POST /api/orders] Telegram notification failed for order', number, tgResult)
+    }
 
     return NextResponse.json(order, { status: 201 })
   } catch (err) {

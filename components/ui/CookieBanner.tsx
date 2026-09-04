@@ -2,23 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { getConsent, setConsent } from '@/lib/consent'
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (!localStorage.getItem('cookie_consent')) {
-      setVisible(true)
-    }
+    if (!getConsent()) setVisible(true)
   }, [])
 
   const accept = () => {
-    localStorage.setItem('cookie_consent', 'accepted')
+    setConsent('accepted')
     setVisible(false)
   }
 
   const decline = () => {
-    localStorage.setItem('cookie_consent', 'declined')
+    setConsent('declined')
     setVisible(false)
   }
 
@@ -39,7 +38,9 @@ export function CookieBanner() {
         }}
       >
         <p className="text-[13px] leading-relaxed" style={{ color: 'var(--muted)' }}>
-          Мы используем технические cookie для корзины и аутентификации. Аналитические и маркетинговые cookie не используются. Подробнее в{' '}
+          Мы используем технические cookie для работы корзины и авторизации — они необходимы и
+          включены всегда. Аналитические cookie (Яндекс.Метрика) подключаются только после вашего
+          согласия. Подробнее — в{' '}
           <Link
             href="/privacy"
             className="underline underline-offset-2 transition-colors hover:text-accent"
@@ -55,14 +56,14 @@ export function CookieBanner() {
             className="whitespace-nowrap text-[13px] border rounded-lg transition-colors hover:border-[var(--accent)] hover:text-accent"
             style={{ padding: '9px 16px', borderColor: 'var(--line)', color: 'var(--muted)' }}
           >
-            Отклонить
+            Только необходимые
           </button>
           <button
             onClick={accept}
             className="btn btn-dark whitespace-nowrap text-[13px]"
             style={{ padding: '9px 20px' }}
           >
-            Принять
+            Принять все
           </button>
         </div>
       </div>

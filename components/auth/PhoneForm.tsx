@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Phone, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ConsentCheckbox } from '@/components/ui/ConsentCheckbox'
 
 type Step = 'phone' | 'code'
 
@@ -17,6 +18,7 @@ export function PhoneForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(0)
+  const [consent, setConsent] = useState(false)
   const codeInputRef = useRef<HTMLInputElement>(null)
 
   const startCountdown = () => {
@@ -81,7 +83,7 @@ export function PhoneForm() {
         <div className="flex items-center gap-3 rounded-[8px] px-4 py-3" style={{ background: 'var(--cream-2)' }}>
           <Phone size={16} style={{ color: 'var(--muted)' }} />
           <p className="text-[13px]" style={{ color: 'var(--muted)' }}>
-            Отправим 4-значный код на ваш номер
+            Отправим 6-значный код на ваш номер
           </p>
         </div>
 
@@ -91,21 +93,27 @@ export function PhoneForm() {
           type="tel"
           placeholder="+7 (900) 000-00-00"
           autoComplete="tel"
-          onKeyDown={(e) => e.key === 'Enter' && phone.length >= 10 && sendCode()}
+          onKeyDown={(e) => e.key === 'Enter' && consent && phone.length >= 10 && sendCode()}
           className={fc}
           style={{ background: 'var(--cream)', borderColor: 'var(--line)', color: 'var(--ink)' }}
         />
 
         {error && <p className="rounded-[6px] bg-red-50 px-4 py-2.5 text-[13px] text-red-600">{error}</p>}
 
+        <ConsentCheckbox checked={consent} onChange={setConsent} />
+
         <button
           onClick={() => sendCode()}
-          disabled={loading || phone.replace(/\D/g, '').length < 10}
-          className="btn btn-dark w-full justify-center gap-2 disabled:opacity-60"
+          disabled={loading || !consent || phone.replace(/\D/g, '').length < 10}
+          className="btn btn-dark w-full justify-center gap-2 disabled:opacity-50"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
           Получить код
         </button>
+
+        <p className="text-center text-[12px]" style={{ color: 'var(--muted)' }}>
+          SMS не приходит? Воспользуйтесь входом по email.
+        </p>
       </div>
     )
   }
@@ -122,13 +130,14 @@ export function PhoneForm() {
       <input
         ref={codeInputRef}
         value={code}
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
         type="text"
         inputMode="numeric"
-        placeholder="• • • •"
-        maxLength={4}
-        onKeyDown={(e) => e.key === 'Enter' && code.length === 4 && verifyCode()}
-        className={cn(fc, 'text-center text-[24px] tracking-[0.5em] font-semibold')}
+        autoComplete="one-time-code"
+        placeholder="• • • • • •"
+        maxLength={6}
+        onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && verifyCode()}
+        className={cn(fc, 'text-center text-[24px] tracking-[0.4em] font-semibold')}
         style={{ background: 'var(--cream)', borderColor: 'var(--line)', color: 'var(--ink)' }}
       />
 
@@ -136,7 +145,7 @@ export function PhoneForm() {
 
       <button
         onClick={verifyCode}
-        disabled={loading || code.length !== 4}
+        disabled={loading || code.length !== 6}
         className="btn btn-dark w-full justify-center gap-2 disabled:opacity-60"
       >
         {loading && <Loader2 size={16} className="animate-spin" />}

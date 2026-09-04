@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils'
 import { CartButton } from '@/components/cart/CartButton'
 import { AccountButton } from '@/components/auth/AccountButton'
 import { SearchButton } from '@/components/ui/SearchModal'
+import { CONTACTS } from '@/lib/contacts'
+import { ConsentCheckbox } from '@/components/ui/ConsentCheckbox'
 import type { NavItem } from '@/types'
 
 interface HeaderProps {
@@ -99,8 +101,8 @@ export function Header({ transparent = false }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
 
-  const phone = process.env.NEXT_PUBLIC_PHONE_DISPLAY ?? '+7 977 790-39-83'
-  const phoneRaw = process.env.NEXT_PUBLIC_PHONE ?? '+79777903983'
+  const phone = CONTACTS.phoneDisplay
+  const phoneRaw = CONTACTS.phone
 
   return (
     <>
@@ -267,6 +269,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 
 function ContactFormInline({ onSuccess }: { onSuccess?: () => void }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [consent, setConsent] = useState(false)
 
   if (status === 'success') {
     return (
@@ -288,6 +291,7 @@ function ContactFormInline({ onSuccess }: { onSuccess?: () => void }) {
     e.preventDefault()
     setStatus('loading')
     const fd = new FormData(e.currentTarget)
+    fd.set('consent', 'true')
     try {
       const res = await fetch('/api/contact', { method: 'POST', body: fd })
       if (!res.ok) throw new Error()
@@ -310,10 +314,11 @@ function ContactFormInline({ onSuccess }: { onSuccess?: () => void }) {
       <input name="email" placeholder="Email" type="email" className={cn(fc, bc)} />
       <textarea name="comment" placeholder="Тип помещения, площадь, задача..." rows={3} className={cn(fc, bc, 'resize-none')} />
       {status === 'error' && <p className="text-sm text-red-500">Ошибка. Позвоните нам напрямую.</p>}
+      <ConsentCheckbox checked={consent} onChange={setConsent} />
       <button
         type="submit"
-        disabled={status === 'loading'}
-        className="btn btn-dark w-full justify-center disabled:opacity-60"
+        disabled={status === 'loading' || !consent}
+        className="btn btn-dark w-full justify-center disabled:opacity-50"
       >
         {status === 'loading' ? 'Отправка...' : 'Рассчитать проект'}
       </button>

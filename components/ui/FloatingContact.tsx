@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { CONTACTS } from '@/lib/contacts'
 
-const PHONE = process.env.NEXT_PUBLIC_PHONE ?? '+79777903983'
-const TELEGRAM = process.env.NEXT_PUBLIC_TELEGRAM ?? 'https://t.me/akusto'
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP ?? 'https://wa.me/70000000000'
+const PHONE = CONTACTS.phone
+const TELEGRAM = CONTACTS.telegram
+const WHATSAPP = CONTACTS.whatsapp
 
 export function FloatingContact() {
   const [open, setOpen] = useState(false)

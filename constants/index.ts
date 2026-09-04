@@ -27,10 +27,29 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Репетиционные базы', labelEn: 'Rehearsal', href: '/segments/rehearsal' },
     ],
   },
-  { label: 'Акустический проект', labelEn: 'Room Designer', href: '/room-designer' },
+  {
+    label: 'Инструменты',
+    labelEn: 'Tools',
+    href: '/room-designer',
+    children: [
+      { label: 'Акустический проект помещения', labelEn: 'Room Designer', href: '/room-designer' },
+      { label: 'Калькулятор стоимости', labelEn: 'Cost Calculator', href: '/calculator' },
+      { label: 'Калькулятор диффузора Шрёдера (QRD)', labelEn: 'Schroeder / QRD Calculator', href: '/diffuser' },
+      { label: 'Калькулятор диффузора Skyline', labelEn: 'Skyline Calculator', href: '/skyline' },
+    ],
+  },
   { label: 'Блог', labelEn: 'Blog', href: '/blog' },
   { label: 'Контакты', labelEn: 'Contacts', href: '/contacts' },
 ]
+
+// Compact list for the mobile menu quick-access grid (calculators are otherwise
+// only reachable from the footer, which sits very deep on phones).
+export const MOBILE_TOOLS = [
+  { label: 'Стоимость обработки', href: '/calculator', icon: '₽' },
+  { label: 'Диффузор Шрёдера (QRD)', href: '/diffuser', icon: '▦' },
+  { label: 'Диффузор Skyline', href: '/skyline', icon: '⛰' },
+  { label: 'Акустический проект', href: '/room-designer', icon: '▢' },
+] as const
 
 export const FOOTER_LINKS = {
   solutions: [

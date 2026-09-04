@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { NAV_ITEMS } from '@/constants'
+import { NAV_ITEMS, MOBILE_TOOLS } from '@/constants'
+import { CONTACTS } from '@/lib/contacts'
 import type { NavItem } from '@/types'
 
 interface MobileMenuProps {
@@ -115,6 +116,36 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             ×
           </button>
 
+          {/* Быстрый доступ к калькуляторам — на мобильных они иначе спрятаны глубоко */}
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.4 } }}
+          >
+            <p
+              className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: 'var(--muted)' }}
+            >
+              Калькуляторы и инструменты
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {MOBILE_TOOLS.map((tool) => (
+                <Link
+                  key={tool.href}
+                  href={tool.href}
+                  onClick={onClose}
+                  className="flex flex-col gap-1 rounded-xl border p-3 transition-colors hover:border-accent"
+                  style={{ borderColor: 'var(--line)', background: 'var(--sand)' }}
+                >
+                  <span className="text-[18px] leading-none" aria-hidden>{tool.icon}</span>
+                  <span className="text-[13px] font-medium leading-tight" style={{ color: 'var(--ink)' }}>
+                    {tool.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+
           <nav className="flex flex-col">
             {NAV_ITEMS.map((item, i) => (
               <MobileNavItem key={item.href} item={item} index={i} onClose={onClose} />
@@ -127,18 +158,27 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             animate={{ opacity: 1, transition: { delay: 0.5 } }}
           >
             <a
-              href={'tel:' + (process.env.NEXT_PUBLIC_PHONE ?? '+79777903983')}
+              href={'tel:' + CONTACTS.phone}
               className="text-lg font-medium"
               style={{ color: 'var(--ink)' }}
             >
-              {process.env.NEXT_PUBLIC_PHONE_DISPLAY ?? '+7 977 790-39-83'}
+              {CONTACTS.phoneDisplay}
             </a>
             <a
-              href={'mailto:' + (process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru')}
+              href={CONTACTS.telegram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium"
+              style={{ color: 'var(--accent)' }}
+            >
+              Telegram {CONTACTS.telegramHandle}
+            </a>
+            <a
+              href={'mailto:' + CONTACTS.email}
               className="text-sm"
               style={{ color: 'var(--muted)' }}
             >
-              {process.env.NEXT_PUBLIC_EMAIL ?? 'hello@akusto.ru'}
+              {CONTACTS.email}
             </a>
           </motion.div>
         </motion.div>

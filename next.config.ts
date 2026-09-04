@@ -22,11 +22,12 @@ const config: NextConfig = {
   async headers() {
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://mc.yandex.ru https://yastatic.net",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://images.unsplash.com https://res.cloudinary.com",
-      "connect-src 'self' https://api.telegram.org",
+      "img-src 'self' data: blob: https://images.unsplash.com https://res.cloudinary.com https://mc.yandex.ru",
+      "connect-src 'self' https://api.telegram.org https://mc.yandex.ru",
+      "frame-src 'self' https://mc.yandex.ru",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
