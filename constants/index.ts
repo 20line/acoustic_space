@@ -123,8 +123,8 @@ export const ROOM_TYPES = [
 ]
 
 export const PANEL_TYPES = [
-  { value: 'fabric', label: 'Тканевые панели', pricePerSqm: 7400 },
+  { value: 'fabric', label: 'Тканевые панели', pricePerSqm: 9500 },
   { value: 'bass-traps', label: 'Басовые ловушки', pricePerSqm: 12600 },
-  { value: 'diffusers', label: 'Диффузоры', pricePerSqm: 11400 },
-  { value: 'mixed', label: 'Комплексная обработка', pricePerSqm: 10200 },
+  { value: 'diffusers', label: 'Диффузоры', pricePerSqm: 12900 },
+  { value: 'mixed', label: 'Комплексная обработка', pricePerSqm: 11500 },
 ]
