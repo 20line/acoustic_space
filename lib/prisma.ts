@@ -1,37 +1,43 @@
-import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool, neonConfig } from '@neondatabase/serverless'
+import { PrismaNeon } from '@prisma/adapter-neon'
 import { PrismaClient } from '@prisma/client'
-import { Pool } from 'pg'
+import ws from 'ws'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Neon free tier suspends compute when idle, which drops TCP connections and
-// makes the HTTP/WebSocket adapters fail (the HTTP adapter also cannot run the
-// transactions that Prisma `include`/nested writes need — that broke the cart
-// and order APIs). A pg.Pool pointed at Neon's PgBouncer *pooler* URL plus a
-// small retry wrapper is the stable combination. See memory: feedback-db-neon.
+// Transport: Neon serverless driver over WebSocket (wss://, port 443).
+//
+// Why not raw pg over TCP 5432: from some networks (incl. RU ISPs with DPI) the
+// Postgres TLS handshake on 5432 intermittently hangs while 443 sails through —
+// the site "loads 2–3 times, then stops". Port 443 also survives serverless
+// cold starts far better. Why not the HTTP-only adapter: it can't run
+// transactions, which Prisma nested writes (orders + items) need.
+//
+// poolQueryViaFetch = plain single queries go over stateless HTTPS (fast, no
+// connection held); only real transactions open a WebSocket.
 // ─────────────────────────────────────────────────────────────────────────────
+
+neonConfig.webSocketConstructor = ws
+neonConfig.poolQueryViaFetch = true
 
 let _client: PrismaClient | undefined
 
 function getPrismaClient(): PrismaClient {
   if (_client) return _client
 
-  // Pooler URL (…-pooler…?pgbouncer=true&sslmode=require) — survives cold starts.
-  const connectionString = (process.env.DATABASE_URL || process.env.DIRECT_URL)!
+  // The serverless driver talks to the compute endpoint directly (fetch mode
+  // needs the non-pooler host); it multiplexes on Neon's side.
+  const connectionString = (process.env.DIRECT_URL || process.env.DATABASE_URL)!
 
   const pool = new Pool({
     connectionString,
-    max: 5,
-    idleTimeoutMillis: 30_000,
-    // Neon free-tier compute cold-starts can take 10s+; give the first
-    // connection room before the retry wrapper takes over.
-    connectionTimeoutMillis: 20_000,
-    keepAlive: true,
+    max: 3,
+    idleTimeoutMillis: 20_000,
+    // Fail fast — a slow/hung connect must not stall a request for a minute.
+    connectionTimeoutMillis: 8_000,
   })
-  // Neon drops idle connections; swallow the resulting async error events so
-  // they don't crash the process — the retry wrapper re-runs the query.
   pool.on('error', () => {})
 
-  const adapter = new PrismaPg(pool)
+  const adapter = new PrismaNeon(pool)
   _client = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
@@ -49,8 +55,10 @@ export const prisma = new Proxy<PrismaClient>({} as PrismaClient, {
   },
 })
 
+// Retry only genuinely transient failures, and keep the total budget short:
+// a request that can't reach the DB should fail in seconds, not minutes.
 export async function dbRetry<T>(fn: () => Promise<T>): Promise<T> {
-  const MAX_ATTEMPTS = 4
+  const MAX_ATTEMPTS = 3
   let lastErr: unknown
   for (let i = 0; i < MAX_ATTEMPTS; i++) {
     try {
@@ -60,18 +68,16 @@ export async function dbRetry<T>(fn: () => Promise<T>): Promise<T> {
       const msg = err instanceof Error ? err.message : ''
       const isTransient =
         msg.includes('terminated') ||
-        msg.includes('Connection terminated') ||
         msg.includes('ECONNRESET') ||
         msg.includes('ECONNREFUSED') ||
         msg.includes('ETIMEDOUT') ||
         msg.includes('fetch failed') ||
         msg.includes('timeout') ||
         msg.includes('Timed out') ||
-        msg.includes('Closed') ||
+        msg.includes('WebSocket') ||
         msg.includes('network')
       if (isTransient && i < MAX_ATTEMPTS - 1) {
-        // Neon compute may still be waking — back off progressively.
-        await new Promise((r) => setTimeout(r, 1500 * (i + 1)))
+        await new Promise((r) => setTimeout(r, 500 * (i + 1)))
         continue
       }
       throw err
