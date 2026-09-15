@@ -10,7 +10,8 @@ export const cormorant = Cormorant_Garamond({
 
 export const manrope = Manrope({
   subsets: ['cyrillic', 'latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  // 300 is never used in the codebase
+  weight: ['400', '500', '600', '700'],
   variable: '--font-manrope',
   display: 'swap',
   preload: true,
@@ -18,7 +19,8 @@ export const manrope = Manrope({
 
 export const montserrat = Montserrat({
   subsets: ['cyrillic', 'latin'],
-  weight: ['600', '700', '800'],
+  // only .display (font-extrabold) uses Montserrat
+  weight: ['800'],
   variable: '--font-montserrat',
   display: 'swap',
   preload: false,
