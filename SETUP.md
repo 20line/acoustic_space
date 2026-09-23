@@ -1,187 +1,127 @@
-# АКУСТО — Инструкция по запуску
+# ACOUSTIC SPACE — запуск проекта на новом компьютере
 
-## Требования
-
-- Node.js 20+ (скачать: https://nodejs.org)
-- npm 10+ (идёт вместе с Node.js)
+Сайт: Next.js 16 (App Router) + Prisma + PostgreSQL (Neon) + NextAuth.
+Боевой домен: **acousticspace.ru** · деплой: Vercel, автоматически при пуше в `master`.
 
 ---
 
-## 1. Установка
+## 1. Что поставить заранее
+
+| Программа | Версия | Где взять |
+|---|---|---|
+| Node.js | **20 или 22 LTS** | nodejs.org (ставить вместе с npm) |
+| Git | любая свежая | git-scm.com |
+
+Проверка в терминале:
 
 ```bash
-cd akusto
+node -v
+npm -v
+git --version
+```
+
+## 2. Скачать репозиторий
+
+```bash
+git clone https://github.com/20line/acoustic_space.git
+```
+
+Затем перейти в папку проекта:
+
+```bash
+cd acoustic_space/akusto
+```
+
+> Код сайта лежит во вложенной папке `akusto`, все команды ниже выполняются из неё.
+
+## 3. Установить зависимости
+
+```bash
 npm install
 ```
 
----
-
-## 2. Настройка переменных окружения
-
-Скопируйте `.env.example` в `.env.local` и заполните:
+Если Prisma не сгенерировался автоматически:
 
 ```bash
-cp .env.example .env.local
+npx prisma generate
 ```
 
-Обязательные переменные:
+## 4. Создать файл `.env` ⚠️ Самое важное
 
-```env
-NEXT_PUBLIC_SITE_URL=https://akusto.ru       # ваш домен
-NEXT_PUBLIC_PHONE=+79001234567               # телефон
-NEXT_PUBLIC_PHONE_DISPLAY=+7 900 123-45-67
-NEXT_PUBLIC_EMAIL=hello@akusto.ru
-NEXT_PUBLIC_TELEGRAM=https://t.me/akusto
-NEXT_PUBLIC_WHATSAPP=https://wa.me/79001234567
+**`.env` намеренно не хранится в Git** — в нём пароли от базы, токен бота и ключи.
+Без него сайт запустится, но каталог, корзина и вход работать не будут.
 
-TELEGRAM_BOT_TOKEN=                          # токен бота от @BotFather
-TELEGRAM_CHAT_ID=                            # ID чата/канала для заявок
-RESEND_API_KEY=                              # для отправки email (resend.com)
-```
+Способы получить:
 
----
+1. **Скопировать файл со старого ПК** — проще всего. Он лежит в
+   `...\site_panels\akusto\.env`. Перенести на флешке или отправить себе в Telegram
+   «Избранное», положить в `acoustic_space/akusto/.env`.
+2. **Собрать заново** — значения есть в панели Vercel:
+   проект → **Settings → Environment Variables**, строка подключения к базе —
+   в панели Neon (console.neon.tech).
 
-## 3. Замена изображений
-
-Все изображения хранятся в папке `public/images/`.
-
-Структура:
+Список ключей и их назначение — в `.env.example` (он в репозитории).
+Минимум, чтобы сайт поднялся локально:
 
 ```
-public/images/
-├── hero/
-│   └── hero-main.jpg          ← главное фото героя (1920×1080)
-├── catalog/
-│   ├── slatted/               ← реечные панели
-│   ├── fabric/                ← тканевые панели  
-│   ├── artistic/              ← художественные
-│   ├── bass-traps/            ← басовые ловушки
-│   └── diffusers/             ← диффузоры
-├── portfolio/                 ← проекты (папка по slug)
-├── segments/                  ← для кого (home-theater, studio, etc.)
-├── about/                     ← фото производства и команды
-├── reviews/                   ← видеоотзыв
-└── og/                        ← OpenGraph (1200×630)
+DATABASE_URL=...        # строка подключения Neon (pooler)
+DIRECT_URL=...          # прямая строка подключения Neon
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=...     # любая длинная случайная строка
 ```
 
-**Просто замените файлы .jpg на свои фотографии с теми же именами.**
+Остальное (Telegram, SMTP, SMS, реквизиты) — по желанию: без них сайт работает,
+просто уведомления уходят в консоль, а не в бот/почту.
 
-Рекомендуемые размеры:
-- Hero: 1920×1080 px, WebP/JPEG
-- Каталог (thumb): 800×550 px
-- Каталог (full): 1200×800 px
-- Портфолио (thumb): 800×600 px
-- Портфолио (main): 1400×900 px
-- Сегменты: 600×800 px (вертикальные)
-- О компании: 900×600 px
-- OG-изображение: 1200×630 px
-
----
-
-## 4. Запуск в режиме разработки
+## 5. Запустить
 
 ```bash
 npm run dev
 ```
 
-Открыть: http://localhost:3000
+Открыть http://localhost:3000
 
----
+Первая загрузка страницы в режиме разработки занимает 5–20 секунд — Next
+компилирует её на лету. Это нормально и к боевому сайту отношения не имеет.
 
-## 5. Сборка для продакшена
-
-```bash
-npm run build
-npm run start
-```
-
----
-
-## 6. Деплой на Vercel
+## 6. Полезные команды
 
 ```bash
-# Установить Vercel CLI
-npm i -g vercel
-
-# Авторизация
-vercel login
-
-# Деплой
-vercel --prod
+npm run dev         # разработка
+npm run build       # production-сборка (проверить перед пушем)
+npm run start       # запустить production-сборку локально
+npm run type-check  # проверка типов TypeScript
 ```
 
-Или подключите GitHub репозиторий в дашборде Vercel — деплой будет автоматическим при каждом пуше.
+## 7. Внести правку и выкатить на сайт
 
-**Переменные окружения** добавьте в Vercel Dashboard → Settings → Environment Variables.
+```bash
+git pull                      # забрать свежие изменения
+# ... редактируем файлы ...
+npm run type-check            # убедиться, что ничего не сломано
+git add -A
+git commit -m "что изменил"
+git push
+```
 
----
+После пуша в `master` Vercel сам соберёт и выкатит сайт — через 2–3 минуты
+изменения будут на acousticspace.ru. Статус сборки: vercel.com → проект →
+вкладка **Deployments**.
 
-## 7. Обновление контента
+> При первом `git push` с нового ПК Git спросит логин GitHub — вводится
+> не пароль, а **Personal Access Token**: github.com/settings/tokens →
+> Generate new token (classic) → отметить `repo` (и `workflow`, если нужно
+> править файлы в `.github/`).
 
-### Тексты и данные
-Все тексты хранятся в файлах:
-- `data/products.ts` — каталог продукции
-- `data/portfolio.ts` — портфолио проектов
-- `data/reviews.ts` — отзывы
-- `data/faq.ts` — FAQ
-- `constants/index.ts` — навигация, контакты, клиенты
+## 8. Где что лежит
 
-### Контакты
-Измените в `.env.local`:
-- `NEXT_PUBLIC_PHONE`
-- `NEXT_PUBLIC_EMAIL`
-- `NEXT_PUBLIC_TELEGRAM`
-- `NEXT_PUBLIC_WHATSAPP`
-
----
-
-## 8. Структура страниц
-
-| URL | Описание |
-|-----|----------|
-| `/` | Главная |
-| `/catalog` | Каталог |
-| `/catalog/slatted` | Реечные панели |
-| `/catalog/slatted/[slug]` | Карточка товара |
-| `/portfolio` | Портфолио |
-| `/portfolio/[slug]` | Страница проекта |
-| `/configurator` | Конфигуратор |
-| `/calculator` | Калькулятор |
-| `/about` | О компании |
-| `/contacts` | Контакты |
-| `/faq` | FAQ |
-| `/blog` | Блог |
-| `/privacy` | Политика |
-
----
-
-## 9. CMS (по желанию)
-
-Проект готов к подключению любой headless CMS:
-- **Sanity**: `npm install @sanity/client`
-- **Strapi**: REST/GraphQL API уже работает со стандартным fetch
-- **Payload CMS**: `npm install payload`
-- **Contentful**: `npm install contentful`
-
-Замените данные из `data/*.ts` на запросы к API.
-
----
-
-## 10. Настройка Telegram-бота
-
-1. Создайте бота у @BotFather → получите `TELEGRAM_BOT_TOKEN`
-2. Добавьте бота в нужный чат/канал
-3. Получите `TELEGRAM_CHAT_ID`: отправьте сообщение и откройте:
-   `https://api.telegram.org/bot<TOKEN>/getUpdates`
-4. Добавьте в `.env.local`
-
----
-
-## Поддержка
-
-Все файлы полностью готовы к деплою. После:
-1. `npm install`
-2. Заполнения `.env.local`
-3. Замены изображений в `public/images/`
-
-Сайт готов к деплою на Vercel.
+| Путь | Что там |
+|---|---|
+| `app/` | страницы и API-маршруты |
+| `components/` | переиспользуемые компоненты |
+| `data/products.ts` | **каталог товаров и цены** |
+| `constants/index.ts` | меню, сегменты, ставки калькулятора |
+| `lib/contacts.ts` | телефон, Telegram, email — единое место |
+| `lib/telegram.ts` | текст уведомлений о заказах в бот |
+| `prisma/schema.prisma` | схема базы данных |
+| `styles/globals.css` | глобальные стили и CSS-переменные |
